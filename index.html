@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SPES-SK@S - Sistem Sokongan Pengurusan Eviden SKPM</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
@@ -19,52 +19,74 @@
       --sidebar-w: 260px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; }
+    body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* =========================================
-       GAYA LOG MASUK (MENGIKUT E-KEBERADAAN) 
-       ========================================= */
+    /* ================= GAYA LOGIN ================= */
     #loginPage {
-      display: flex; justify-content: center; align-items: center; width: 100vw;
-      min-height: 100vh; background-color: #f3f4f6; position: fixed; z-index: 1000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; 
+      width: 100vw; min-height: 100vh; background-color: #f3f4f6; padding: 30px 15px; position: fixed; z-index: 1000; overflow-y: auto;
     }
     .login-card {
-      background: #fff; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-      width: 100%; max-width: 420px; text-align: center;
+      background: #fff; padding: 35px 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      width: 100%; max-width: 440px; text-align: center;
     }
     .eyebrow { font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-    .login-card h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin-bottom: 10px; }
-    .login-copy { font-size: 0.9rem; color: #6b7280; margin-bottom: 25px; line-height: 1.5; }
+    .login-card h1 { font-size: 1.4rem; font-weight: 800; color: #111827; margin-bottom: 8px; }
+    .login-copy { font-size: 0.85rem; color: #6b7280; margin-bottom: 22px; line-height: 1.5; }
     
-    .login-field { display: flex; flex-direction: column; text-align: left; margin-bottom: 20px; }
-    .login-field span { font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 8px; }
+    .login-field { display: flex; flex-direction: column; text-align: left; margin-bottom: 18px; }
+    .login-field span { font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
     .login-field input {
-      padding: 12px 16px; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 1rem;
+      padding: 12px 14px; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 0.95rem;
       transition: border-color 0.2s; outline: none; background: #fff; color: #111827;
     }
     .login-field input:focus { border-color: #0d9488; }
     
     .btn-login-full {
-      width: 100%; padding: 14px; background: #0d9488; color: #fff; border: none;
-      border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s;
+      width: 100%; padding: 13px; background: #0d9488; color: #fff; border: none;
+      border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.2s;
     }
     .btn-login-full:hover { background: #0f766e; }
     
     .account-box {
-      background: #f0fdfa; border: 1px solid #ccfbf1; padding: 12px; border-radius: 10px;
-      font-weight: 600; color: #0f766e; margin-bottom: 15px; font-size: 0.9rem;
+      background: #f0fdfa; border: 1px solid #ccfbf1; padding: 10px; border-radius: 8px;
+      font-weight: 600; color: #0f766e; margin-bottom: 15px; font-size: 0.88rem; word-break: break-all;
     }
     .change-account-link {
-      background: none; border: none; color: #6b7280; font-size: 0.85rem; font-weight: 600;
-      cursor: pointer; margin-bottom: 20px; display: inline-block;
+      background: none; border: none; color: #6b7280; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; margin-bottom: 15px; display: inline-block;
     }
     .change-account-link:hover { color: #374151; text-decoration: underline; }
-    .inline-error { color: #dc2626; font-size: 0.85rem; margin-top: 15px; font-weight: 600; }
+    .inline-error { color: #dc2626; font-size: 0.85rem; margin-top: 12px; font-weight: 600; }
     .hidden { display: none !important; }
 
-    /* =========================================
-       GAYA APLIKASI UTAMA (SPES-SK@S) 
-       ========================================= */
+    /* ================= PANEL DEBUG CONSOLE ================= */
+    .debug-container {
+      width: 100%; max-width: 440px; margin-top: 15px; background: #18181b; border-radius: 12px;
+      border: 1px solid #27272a; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.15); text-align: left;
+    }
+    .debug-header {
+      padding: 10px 14px; background: #27272a; display: flex; justify-content: space-between; align-items: center;
+      color: #a1a1aa; font-size: 0.78rem; font-weight: 700; font-family: 'Fira Code', monospace;
+    }
+    .debug-actions { display: flex; gap: 8px; }
+    .debug-btn {
+      background: #3f3f46; border: none; color: #f4f4f5; font-size: 0.7rem; padding: 3px 8px;
+      border-radius: 4px; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .debug-btn:hover { background: #52525b; }
+    .debug-body {
+      padding: 12px; max-height: 250px; overflow-y: auto; font-family: 'Fira Code', monospace;
+      font-size: 0.75rem; line-height: 1.4; color: #d4d4d8;
+    }
+    .log-line { margin-bottom: 6px; word-break: break-word; }
+    .log-time { color: #71717a; }
+    .log-info { color: #38bdf8; }
+    .log-success { color: #4ade80; }
+    .log-warn { color: #facc15; }
+    .log-error { color: #f87171; font-weight: 600; }
+
+    /* ================= APLIKASI UTAMA ================= */
     #app-view { display: none; width: 100vw; min-height: 100vh; }
     .sidebar {
       width: var(--sidebar-w); background: #00251a; color: #e0f2f1; height: 100vh; position: fixed;
@@ -82,10 +104,8 @@
     .main-wrapper { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
     .topbar { height: 70px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
     .content-area { padding: 30px; flex: 1; }
-    
     .view-card { background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border-color); padding: 25px; margin-bottom: 25px; }
     .page-title { font-size: 1.5rem; font-weight: 800; }
-    
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { background: var(--bg-main); padding: 14px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; border-bottom: 1px solid var(--border-color); }
     td { padding: 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border-color); }
@@ -103,11 +123,11 @@
   <div id="loader-modal">
     <div class="loader-box">
       <div class="spinner"></div>
-      <h4 id="loader-title">Memuat turun data...</h4>
+      <h4 id="loader-title">Memuat data...</h4>
     </div>
   </div>
 
-  <!-- VIEW 1: E-KEBERADAAN STYLE LOGIN PAGE -->
+  <!-- VIEW 1: LOGIN PAGE + DEBUG CONSOLE -->
   <section id="loginPage" class="login-page">
     <div class="login-card pin-login-card">
       <div class="login-logo">
@@ -115,7 +135,7 @@
       </div>
       <div class="eyebrow">Sistem Sokongan Pengurusan Eviden</div>
       <h1 id="loginSchoolName">SKPM Kualiti @ Sekolah</h1>
-      <p class="login-copy">Log masuk bersepadu menggunakan pangkalan data pengguna e-Keberadaan anda.</p>
+      <p class="login-copy">Log masuk bersepadu menggunakan pangkalan data pengguna e-Keberadaan.</p>
 
       <!-- Langkah 1: Emel -->
       <div id="loginStepEmail" class="login-step">
@@ -124,7 +144,7 @@
           <input id="delimaEmail" type="email" autocomplete="username" inputmode="email" placeholder="nama@moe-dl.edu.my" onkeydown="if(event.key==='Enter'){checkEmail();}">
         </label>
         <button id="checkDelimaBtn" class="btn-login-full" type="button" onclick="checkEmail()">
-          Teruskan
+          Teruskan <i class="fa-solid fa-arrow-right"></i>
         </button>
       </div>
 
@@ -133,13 +153,27 @@
         <div id="delimaAccountCard" class="account-box"></div>
         <button class="change-account-link" type="button" onclick="resetLogin()">← Gunakan akaun DELIMa lain</button>
         <label class="login-field pin-field">
-          <span>PIN e-Keberadaan</span>
+          <span>PIN e-Keberadaan (6 Digit)</span>
           <input id="loginPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter'){executeLogin();}">
         </label>
         <button id="pinLoginBtn" class="btn-login-full" type="button" onclick="executeLogin()">Masuk</button>
       </div>
 
       <div id="loginError" class="inline-error"></div>
+    </div>
+
+    <!-- PANEL KONSOL DIAGNOSTIK & LOG DEBUG -->
+    <div class="debug-container">
+      <div class="debug-header">
+        <span><i class="fa-solid fa-terminal"></i> DIAGNOSTIC CONSOLE</span>
+        <div class="debug-actions">
+          <button class="debug-btn" onclick="copyDebugLog()">Salin Log</button>
+          <button class="debug-btn" onclick="clearDebugConsole()">Bersihkan</button>
+        </div>
+      </div>
+      <div class="debug-body" id="debugConsole">
+        <div class="log-line log-info">[Sedia] Sistem siap menerima permintaan login...</div>
+      </div>
     </div>
   </section>
 
@@ -170,37 +204,60 @@
       </header>
 
       <section class="content-area">
-        <!-- 1. ANALISIS -->
         <div id="module-analisis" class="module-pane">
           <h2 class="page-title" style="margin-bottom:20px;">Dashboard Analisis Eviden</h2>
           <div class="view-card">
-            <p>Fungsi SPES-SK@S diaktifkan. Anda kini menggunakan pangkalan data yang dikongsi terus bersama Modul e-Keberadaan.</p>
+            <p>Fungsi SPES-SK@S aktif. Pangkalan data diselaraskan terus dengan modul e-Keberadaan.</p>
           </div>
         </div>
 
-        <!-- 8. PENGGUNA (READ ONLY) -->
         <div id="module-pengguna" class="module-pane admin-only" style="display:none;">
           <h2 class="page-title" style="margin-bottom:20px;">Pengurusan Pengguna (e-Keberadaan)</h2>
           <div class="view-card">
-            <p style="margin-bottom: 20px; font-size: 0.85rem; color: var(--text-muted);">Tetapan peranan dan PIN pengguna dikawal sepenuhnya oleh Google Sheet e-Keberadaan. Akses Pentadbir e-Keberadaan secara automatik diberikan akses ADMIN di SPES-SK@S.</p>
             <table>
-              <thead><tr><th>Emel</th><th>Nama</th><th>Peranan SPES-SK@S</th><th>Status e-Keberadaan</th><th>Pengurusan Keselamatan</th></tr></thead>
+              <thead><tr><th>Emel</th><th>Nama</th><th>Peranan</th><th>Status</th></tr></thead>
               <tbody id="users-table-body"></tbody>
             </table>
           </div>
         </div>
-        
       </section>
     </main>
   </div>
 
   <script>
-    // MASUKKAN URL GOOGLE APPS SCRIPT WEB APP ANDA DI SINI
+    // URL WEB APP GOOGLE APPS SCRIPT ANDA
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw5Hemo0rixPGePP6CXrsbXDlVG5ocg7JMO2DgF3Gzd0OWKI6JA17_unVHj2Inxfw6h/exec";
 
     let CURRENT_USER = null;
     let SYSTEM_BUNDLE = null;
     let loginEmail = "";
+
+    // ---------------- HELPER LOGGER KE LAYAR & CONSOLE ----------------
+    function logToScreen(msg, type = "info") {
+      const consoleBox = document.getElementById('debugConsole');
+      const time = new Date().toLocaleTimeString('ms-MY', { hour12: false });
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+      consoleBox.appendChild(line);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+
+      if (type === "error") console.error(`[SPES-DEBUG] ${msg}`);
+      else if (type === "warn") console.warn(`[SPES-DEBUG] ${msg}`);
+      else console.log(`[SPES-DEBUG] ${msg}`);
+    }
+
+    function clearDebugConsole() {
+      document.getElementById('debugConsole').innerHTML = "";
+      logToScreen("Konsol dibersihkan.", "info");
+    }
+
+    function copyDebugLog() {
+      const text = document.getElementById('debugConsole').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Log diagnostik berhasil disalin ke clipboard!");
+      });
+    }
 
     function showLoader(title) {
       document.getElementById('loader-title').innerText = title || "Memuat Turun Data...";
@@ -209,17 +266,21 @@
     function hideLoader() { document.getElementById('loader-modal').style.display = "none"; }
 
     async function apiRequest(payload) {
-      const resp = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-      return await resp.json();
+      logToScreen(`Mengirim request: action=${payload.action}`, "info");
+      const resp = await fetch(GAS_API_URL, { 
+        method: "POST", 
+        body: JSON.stringify(payload) 
+      });
+      const data = await resp.json();
+      return data;
     }
 
-    // ===================================
-    // LOGIK LOG MASUK 2-LANGKAH
-    // ===================================
+    // ---------------- PROSES LOGIN ----------------
     function checkEmail() {
       const email = document.getElementById('delimaEmail').value.trim();
       if (!email) {
         document.getElementById('loginError').innerText = "Sila masukkan Emel DELIMa.";
+        logToScreen("Validasi gagal: input email kosong.", "warn");
         return;
       }
       loginEmail = email;
@@ -227,6 +288,8 @@
       document.getElementById('loginStepEmail').classList.add('hidden');
       document.getElementById('loginStepPin').classList.remove('hidden');
       document.getElementById('delimaAccountCard').innerText = email;
+      logToScreen(`Email disimpan: ${email}. Menunggu input PIN...`, "info");
+      setTimeout(() => document.getElementById('loginPin').focus(), 150);
     }
 
     function resetLogin() {
@@ -236,28 +299,52 @@
       document.getElementById('loginError').innerText = "";
       document.getElementById('loginStepPin').classList.add('hidden');
       document.getElementById('loginStepEmail').classList.remove('hidden');
+      logToScreen("Sesi input login di-reset oleh pengguna.", "info");
     }
 
     async function executeLogin() {
-      const pin = document.getElementById('loginPin').value;
+      const pin = document.getElementById('loginPin').value.trim();
       if (!pin) {
         document.getElementById('loginError').innerText = "Sila masukkan PIN.";
+        logToScreen("Validasi gagal: input PIN kosong.", "warn");
         return;
       }
       
       showLoader("Mengesahkan Akses e-Keberadaan...");
+      logToScreen(`Memverifikasi kredensial untuk ${loginEmail} (PIN: ${pin.length} digit)...`, "info");
+
       try {
         const res = await apiRequest({ action: "login", email: loginEmail, pin: pin });
+        logToScreen(`Respon diterima: status=${res.status}`, res.status === "success" ? "success" : "warn");
+
+        // Tampilkan diagnostik detail ke konsol
+        if (res.debug) {
+          logToScreen(`User found: ${res.debug.userFound} | Baris: ${res.debug.matchedRow || 'N/A'}`, "info");
+          if (res.debug.storedHash) {
+            logToScreen(`Stored Hash di Sheet: ${res.debug.storedHash}`, "info");
+          }
+          if (res.debug.hashCalculations) {
+            for (let [method, val] of Object.entries(res.debug.hashCalculations)) {
+              const isMatch = (val === res.debug.storedHash);
+              logToScreen(`↳ [${method}]: ${val} ${isMatch ? ' [MATCH!]' : ''}`, isMatch ? "success" : "info");
+            }
+          }
+        }
+
         if (res.status === "success") {
           CURRENT_USER = res.user;
+          logToScreen(`Login berhasil! Selamat datang ${CURRENT_USER.name} (${CURRENT_USER.role})`, "success");
           await loadAppBundle();
           document.getElementById('loginPage').classList.add('hidden');
           document.getElementById('app-view').style.display = "flex";
         } else {
           document.getElementById('loginError').innerText = res.message;
+          logToScreen(`Alasan gagal: ${res.message}`, "error");
         }
       } catch (e) {
-        document.getElementById('loginError').innerText = "Ralat pelayan. Sila periksa URL Apps Script.";
+        document.getElementById('loginError').innerText = "Ralat pelayan. Sila periksa konsol debug.";
+        logToScreen(`Exception fetch error: ${e.message}`, "error");
+        console.error(e);
       } finally {
         hideLoader();
       }
@@ -268,6 +355,7 @@
       document.getElementById('app-view').style.display = "none";
       document.getElementById('loginPage').style.display = "flex";
       resetLogin();
+      logToScreen("Pengguna telah logout.", "info");
     }
 
     async function loadAppBundle() {
@@ -277,13 +365,9 @@
         SYSTEM_BUNDLE = res;
         document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
         document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
-        
-        // Kawalan Akses UI
         document.querySelectorAll('.admin-only').forEach(el => {
           el.style.display = CURRENT_USER.role === "ADMIN" ? '' : 'none';
         });
-
-        if (CURRENT_USER.role === "ADMIN") renderUsersTable();
       }
       hideLoader();
     }
@@ -293,20 +377,6 @@
       el.classList.add('active');
       document.querySelectorAll('.module-pane').forEach(pane => pane.style.display = 'none');
       document.getElementById('module-' + moduleId).style.display = 'block';
-    }
-
-    // Jadual yang disesuaikan untuk memaparkan parameter Pengguna dari Sheet e-Keberadaan
-    function renderUsersTable() {
-      const tbody = document.getElementById('users-table-body');
-      tbody.innerHTML = SYSTEM_BUNDLE.users.map(u => `
-        <tr>
-          <td>${u.Email}</td>
-          <td><b>${u.Nama}</b></td>
-          <td><span style="font-size:0.75rem; font-weight:700; background:#e0f2f1; color:#004d40; padding:4px 8px; border-radius:12px;">${u.Peranan}</span></td>
-          <td><span style="font-weight:700; font-size:0.75rem; color:${u.Status === 'AKTIF' ? '#2e7d32' : '#c62828'};">${u.Status}</span></td>
-          <td><button style="background:none; border:none; color:var(--text-muted); cursor:pointer;" onclick="alert('Ubah tetapan profil dan PIN melalui Modul/Sistem e-Keberadaan asal.')"><i class="fa-solid fa-lock"></i> Diuruskan oleh e-Keberadaan</button></td>
-        </tr>
-      `).join('');
     }
   </script>
 </body>
