@@ -314,7 +314,13 @@
       logToScreen(`Memverifikasi kredensial untuk ${loginEmail} (PIN: ${pin.length} digit)...`, "info");
 
       try {
-        const res = await apiRequest({ action: "login", email: loginEmail, pin: pin });
+        // Tukar baris ini dalam fail index.html
+        const res = await apiRequest({ 
+            app: "SPES-SKAS", 
+            action: "login_spes", 
+            email: loginEmail, 
+            pin: pin 
+        });
         logToScreen(`Respon diterima: status=${res.status}`, res.status === "success" ? "success" : "warn");
 
         // Tampilkan diagnostik detail ke konsol
