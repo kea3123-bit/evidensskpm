@@ -225,165 +225,111 @@
   </div>
 
   <script>
-    // URL WEB APP GOOGLE APPS SCRIPT ANDA
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw5Hemo0rixPGePP6CXrsbXDlVG5ocg7JMO2DgF3Gzd0OWKI6JA17_unVHj2Inxfw6h/exec";
+  // 1. URL Web App e-Keberadaan anda (yang mengandungi kod Bridges.gs & 10_Auth.gs)
+  const E_KEBERADAAN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUv2F6Fl3drRR-TTTJkefu73TwbuQk5GVf36z87WLYIy40SSqZOfKBCeSIy7xje_wq/exec";
 
-    let CURRENT_USER = null;
-    let SYSTEM_BUNDLE = null;
-    let loginEmail = "";
+  // 2. URL Web App SPES-SK@S (yang mengandungi kod Code.gs di atas)
+  const SPES_API_URL = "https://script.google.com/macros/s/AKfycbw5Hemo0rixPGePP6CXrsbXDlVG5ocg7JMO2DgF3Gzd0OWKI6JA17_unVHj2Inxfw6h/exec";
 
-    // ---------------- HELPER LOGGER KE LAYAR & CONSOLE ----------------
-    function logToScreen(msg, type = "info") {
-      const consoleBox = document.getElementById('debugConsole');
-      const time = new Date().toLocaleTimeString('ms-MY', { hour12: false });
-      const line = document.createElement('div');
-      line.className = `log-line log-${type}`;
-      line.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
-      consoleBox.appendChild(line);
-      consoleBox.scrollTop = consoleBox.scrollHeight;
+  let CURRENT_USER = null;
+  let SYSTEM_BUNDLE = null;
+  let loginEmail = "";
 
-      if (type === "error") console.error(`[SPES-DEBUG] ${msg}`);
-      else if (type === "warn") console.warn(`[SPES-DEBUG] ${msg}`);
-      else console.log(`[SPES-DEBUG] ${msg}`);
+  function checkEmail() {
+    const email = document.getElementById('delimaEmail').value.trim();
+    if (!email) {
+      document.getElementById('loginError').innerText = "Sila masukkan Emel DELIMa.";
+      return;
+    }
+    loginEmail = email;
+    document.getElementById('loginError').innerText = "";
+    document.getElementById('loginStepEmail').classList.add('hidden');
+    document.getElementById('loginStepPin').classList.remove('hidden');
+    document.getElementById('delimaAccountCard').innerText = email;
+    setTimeout(() => document.getElementById('loginPin').focus(), 150);
+  }
+
+  function resetLogin() {
+    loginEmail = "";
+    document.getElementById('delimaEmail').value = "";
+    document.getElementById('loginPin').value = "";
+    document.getElementById('loginError').innerText = "";
+    document.getElementById('loginStepPin').classList.add('hidden');
+    document.getElementById('loginStepEmail').classList.remove('hidden');
+  }
+
+  async function executeLogin() {
+    const pin = document.getElementById('loginPin').value.trim();
+    if (!pin) {
+      document.getElementById('loginError').innerText = "Sila masukkan PIN.";
+      return;
     }
 
-    function clearDebugConsole() {
-      document.getElementById('debugConsole').innerHTML = "";
-      logToScreen("Konsol dibersihkan.", "info");
-    }
+    showLoader("Mengesahkan PIN melalui e-Keberadaan...");
 
-    function copyDebugLog() {
-      const text = document.getElementById('debugConsole').innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Log diagnostik berhasil disalin ke clipboard!");
+    try {
+      // Protokol Rasmi Bridge e-Keberadaan (Bridges.gs)
+      const currentOrigin = window.location.origin || "https://kea3123-bit.github.io";
+      const bridgePayload = {
+        id: "req_" + Date.now(),
+        channel: "perf-burst", // Mod ini mengarahkan e-Keberadaan memulangkan respon JSON terus
+        method: "loginWithPin",
+        args: [loginEmail, pin, { userAgent: navigator.userAgent }, ""],
+        origin: currentOrigin
+      };
+
+      const formData = new URLSearchParams();
+      formData.append("bridge", "1");
+      formData.append("payload", JSON.stringify(bridgePayload));
+
+      const resp = await fetch(E_KEBERADAAN_WEB_APP_URL, {
+        method: "POST",
+        body: formData
       });
-    }
 
-    function showLoader(title) {
-      document.getElementById('loader-title').innerText = title || "Memuat Turun Data...";
-      document.getElementById('loader-modal').style.display = "flex";
-    }
-    function hideLoader() { document.getElementById('loader-modal').style.display = "none"; }
+      const result = await resp.json();
 
-    async function apiRequest(payload) {
-      logToScreen(`Mengirim request: action=${payload.action}`, "info");
-      const resp = await fetch(GAS_API_URL, { 
-        method: "POST", 
-        body: JSON.stringify(payload) 
-      });
-      const data = await resp.json();
-      return data;
-    }
+      // Struktur respon daripada renderPagesBridgeTransport_
+      if (result.ok && result.value && result.value.ok) {
+        const authBoot = result.value.boot;
+        CURRENT_USER = {
+          email: authBoot.user.email,
+          name: authBoot.user.name,
+          role: authBoot.user.isAdmin ? "ADMIN" : "USER"
+        };
 
-    // ---------------- PROSES LOGIN ----------------
-    function checkEmail() {
-      const email = document.getElementById('delimaEmail').value.trim();
-      if (!email) {
-        document.getElementById('loginError').innerText = "Sila masukkan Emel DELIMa.";
-        logToScreen("Validasi gagal: input email kosong.", "warn");
-        return;
+        // Muat turun data eviden dari pelayan SPES-SK@S
+        await loadAppBundle();
+        document.getElementById('loginPage').classList.add('hidden');
+        document.getElementById('app-view').style.display = "flex";
+      } else {
+        document.getElementById('loginError').innerText = result.error || "Emel atau PIN tidak tepat.";
       }
-      loginEmail = email;
-      document.getElementById('loginError').innerText = "";
-      document.getElementById('loginStepEmail').classList.add('hidden');
-      document.getElementById('loginStepPin').classList.remove('hidden');
-      document.getElementById('delimaAccountCard').innerText = email;
-      logToScreen(`Email disimpan: ${email}. Menunggu input PIN...`, "info");
-      setTimeout(() => document.getElementById('loginPin').focus(), 150);
-    }
-
-    function resetLogin() {
-      loginEmail = "";
-      document.getElementById('delimaEmail').value = "";
-      document.getElementById('loginPin').value = "";
-      document.getElementById('loginError').innerText = "";
-      document.getElementById('loginStepPin').classList.add('hidden');
-      document.getElementById('loginStepEmail').classList.remove('hidden');
-      logToScreen("Sesi input login di-reset oleh pengguna.", "info");
-    }
-
-    async function executeLogin() {
-      const pin = document.getElementById('loginPin').value.trim();
-      if (!pin) {
-        document.getElementById('loginError').innerText = "Sila masukkan PIN.";
-        logToScreen("Validasi gagal: input PIN kosong.", "warn");
-        return;
-      }
-      
-      showLoader("Mengesahkan Akses e-Keberadaan...");
-      logToScreen(`Memverifikasi kredensial untuk ${loginEmail} (PIN: ${pin.length} digit)...`, "info");
-
-      try {
-        // Tukar baris ini dalam fail index.html
-        const res = await apiRequest({ 
-            app: "SPES-SKAS", 
-            action: "login_spes", 
-            email: loginEmail, 
-            pin: pin 
-        });
-        logToScreen(`Respon diterima: status=${res.status}`, res.status === "success" ? "success" : "warn");
-
-        // Tampilkan diagnostik detail ke konsol
-        if (res.debug) {
-          logToScreen(`User found: ${res.debug.userFound} | Baris: ${res.debug.matchedRow || 'N/A'}`, "info");
-          if (res.debug.storedHash) {
-            logToScreen(`Stored Hash di Sheet: ${res.debug.storedHash}`, "info");
-          }
-          if (res.debug.hashCalculations) {
-            for (let [method, val] of Object.entries(res.debug.hashCalculations)) {
-              const isMatch = (val === res.debug.storedHash);
-              logToScreen(`↳ [${method}]: ${val} ${isMatch ? ' [MATCH!]' : ''}`, isMatch ? "success" : "info");
-            }
-          }
-        }
-
-        if (res.status === "success") {
-          CURRENT_USER = res.user;
-          logToScreen(`Login berhasil! Selamat datang ${CURRENT_USER.name} (${CURRENT_USER.role})`, "success");
-          await loadAppBundle();
-          document.getElementById('loginPage').classList.add('hidden');
-          document.getElementById('app-view').style.display = "flex";
-        } else {
-          document.getElementById('loginError').innerText = res.message;
-          logToScreen(`Alasan gagal: ${res.message}`, "error");
-        }
-      } catch (e) {
-        document.getElementById('loginError').innerText = "Ralat pelayan. Sila periksa konsol debug.";
-        logToScreen(`Exception fetch error: ${e.message}`, "error");
-        console.error(e);
-      } finally {
-        hideLoader();
-      }
-    }
-
-    function logout() {
-      CURRENT_USER = null;
-      document.getElementById('app-view').style.display = "none";
-      document.getElementById('loginPage').style.display = "flex";
-      resetLogin();
-      logToScreen("Pengguna telah logout.", "info");
-    }
-
-    async function loadAppBundle() {
-      showLoader("Memuatkan Pangkalan Data...");
-      const res = await apiRequest({ action: "get_bundle" });
-      if (res.status === "success") {
-        SYSTEM_BUNDLE = res;
-        document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
-        document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
-        document.querySelectorAll('.admin-only').forEach(el => {
-          el.style.display = CURRENT_USER.role === "ADMIN" ? '' : 'none';
-        });
-      }
+    } catch (e) {
+      document.getElementById('loginError').innerText = "Ralat komunikasi dengan pelayan e-Keberadaan: " + e.message;
+    } finally {
       hideLoader();
     }
+  }
 
-    function switchNav(moduleId, el) {
-      document.querySelectorAll('.nav-list li').forEach(li => li.classList.remove('active'));
-      el.classList.add('active');
-      document.querySelectorAll('.module-pane').forEach(pane => pane.style.display = 'none');
-      document.getElementById('module-' + moduleId).style.display = 'block';
+  async function loadAppBundle() {
+    showLoader("Memuatkan Data Eviden...");
+    const resp = await fetch(SPES_API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "get_bundle", tahun: "2026" })
+    });
+    const res = await resp.json();
+    if (res.status === "success") {
+      SYSTEM_BUNDLE = res;
+      document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
+      document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = CURRENT_USER.role === "ADMIN" ? '' : 'none';
+      });
+      renderDashboard();
     }
-  </script>
+    hideLoader();
+  }
+</script>
 </body>
 </html>
