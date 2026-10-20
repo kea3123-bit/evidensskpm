@@ -471,7 +471,7 @@
                 <input type="text" id="set-folder" class="form-control">
               </div>
             </div>
-            <button class="btn-login-full" onclick="alert('Tetapan ini dipautkan bersama pangkalan data e-Keberadaan.')" style="margin-top:20px; width:auto; padding:12px 30px;">
+            <button class="btn-login-full" onclick="saveSystemSettings()" style="margin-top:20px; width:auto; padding:12px 30px;">
               <i class="fa-solid fa-check"></i> Simpan Tetapan
             </button>
           </div>
@@ -509,6 +509,35 @@
       if (errEl) {
         errEl.innerText = msg;
         errEl.classList.remove('hidden');
+      }
+    }
+    async function saveSystemSettings() {
+      showLoader("Menyimpan Tetapan...");
+      const payload = {
+        action: "update_settings",
+        tahun: document.getElementById('set-tahun').value,
+        kodSekolah: document.getElementById('set-kod').value,
+        namaSekolah: document.getElementById('set-nama').value,
+        folderId: document.getElementById('set-folder').value
+      };
+
+      try {
+        const resp = await fetch(SPES_API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        
+        if (res.status === "success") {
+          alert("Tetapan Sistem Berjaya Disimpan!");
+          await loadAppBundle(); // Refresh paparan topbar dengan nama baharu
+        } else {
+          alert("Gagal menyimpan tetapan: " + res.message);
+        }
+      } catch (err) {
+        alert("Ralat pelayan: " + err.message);
+      } finally {
+        hideLoader();
       }
     }
 
@@ -632,18 +661,27 @@
       }
     }
 
+    // Gantikan fungsi renderGlobalStates() sedia ada dengan yang ini:
     function renderGlobalStates() {
       document.querySelectorAll('.active-year-txt').forEach(el => el.innerText = SYSTEM_BUNDLE.activeYear);
       document.getElementById('bar-year-badge').innerText = SYSTEM_BUNDLE.activeYear;
       document.getElementById('bar-school-name').innerText = SYSTEM_BUNDLE.settings["NAMA SEKOLAH"] || "SMK BANDAR BARU SUNGAI LALANG";
       document.getElementById('sb-school-code').innerText = "KOD: " + (SYSTEM_BUNDLE.settings["KOD SEKOLAH"] || "NEA6008");
+      
       document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
       document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
 
       const isAdmin = CURRENT_USER.role === "ADMIN";
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-    }
 
+      // Paparkan Tetapan terkini di Menu Tetapan
+      if (isAdmin) {
+        document.getElementById('set-tahun').value = SYSTEM_BUNDLE.activeYear || "";
+        document.getElementById('set-kod').value = SYSTEM_BUNDLE.settings["KOD SEKOLAH"] || "";
+        document.getElementById('set-nama').value = SYSTEM_BUNDLE.settings["NAMA SEKOLAH"] || "";
+        document.getElementById('set-folder').value = SYSTEM_BUNDLE.settings["FOLDER DRIVE EVIDEN"] || "";
+      }
+    }
     function renderDashboard() {
       const list = SYSTEM_BUNDLE.eviden || [];
       document.getElementById('stat-total').innerText = list.length;
