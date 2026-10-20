@@ -224,25 +224,59 @@
     </main>
   </div>
 
-  <script>
-  // 1. URL Web App e-Keberadaan anda (yang mengandungi kod Bridges.gs & 10_Auth.gs)
+<script>
+  // 1. URL Web App e-Keberadaan anda (yang ada Bridges.gs & 10_Auth.gs)
   const E_KEBERADAAN_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyUv2F6Fl3drRR-TTTJkefu73TwbuQk5GVf36z87WLYIy40SSqZOfKBCeSIy7xje_wq/exec";
 
-  // 2. URL Web App SPES-SK@S (yang mengandungi kod Code.gs di atas)
-  const SPES_API_URL = "https://script.google.com/macros/s/AKfycbw5Hemo0rixPGePP6CXrsbXDlVG5ocg7JMO2DgF3Gzd0OWKI6JA17_unVHj2Inxfw6h/exec";
+  // 2. URL Web App SPES-SK@S (Code.gs SPES-SK@S)
+  const SPES_API_URL = "https://script.google.com/macros/s/AKfycbw5Hemo0rixPGePP6CXrsbXDlVG5ocg7JMO2DgF3Gzd0OWKI6JA17_unVHj2Inxfw6h/exec"";
 
   let CURRENT_USER = null;
   let SYSTEM_BUNDLE = null;
   let loginEmail = "";
 
+  // ==========================================
+  // FUNGSI PEMBANTU LOADER & RALAT (DIPERBAIKI)
+  // ==========================================
+  function showLoader(title) {
+    const el = document.getElementById('loader-modal');
+    const titleEl = document.getElementById('loader-title');
+    if (titleEl) titleEl.innerText = title || "Memuat Turun Data...";
+    if (el) el.style.display = "flex";
+  }
+
+  function hideLoader() {
+    const el = document.getElementById('loader-modal');
+    if (el) el.style.display = "none";
+  }
+
+  function showLoginError(msg) {
+    const errEl = document.getElementById('loginError');
+    if (errEl) {
+      errEl.innerText = msg;
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  function hideLoginError() {
+    const errEl = document.getElementById('loginError');
+    if (errEl) {
+      errEl.innerText = "";
+      errEl.classList.add('hidden');
+    }
+  }
+
+  // ==========================================
+  // ALIRAN LOG MASUK
+  // ==========================================
   function checkEmail() {
     const email = document.getElementById('delimaEmail').value.trim();
     if (!email) {
-      document.getElementById('loginError').innerText = "Sila masukkan Emel DELIMa.";
+      showLoginError("Sila masukkan Emel DELIMa.");
       return;
     }
     loginEmail = email;
-    document.getElementById('loginError').innerText = "";
+    hideLoginError();
     document.getElementById('loginStepEmail').classList.add('hidden');
     document.getElementById('loginStepPin').classList.remove('hidden');
     document.getElementById('delimaAccountCard').innerText = email;
@@ -253,7 +287,7 @@
     loginEmail = "";
     document.getElementById('delimaEmail').value = "";
     document.getElementById('loginPin').value = "";
-    document.getElementById('loginError').innerText = "";
+    hideLoginError();
     document.getElementById('loginStepPin').classList.add('hidden');
     document.getElementById('loginStepEmail').classList.remove('hidden');
   }
@@ -261,18 +295,19 @@
   async function executeLogin() {
     const pin = document.getElementById('loginPin').value.trim();
     if (!pin) {
-      document.getElementById('loginError').innerText = "Sila masukkan PIN.";
+      showLoginError("Sila masukkan PIN.");
       return;
     }
 
     showLoader("Mengesahkan PIN melalui e-Keberadaan...");
+    hideLoginError();
 
     try {
-      // Protokol Rasmi Bridge e-Keberadaan (Bridges.gs)
+      // Panggilan protokol Bridge ke Apps Script e-Keberadaan
       const currentOrigin = window.location.origin || "https://kea3123-bit.github.io";
       const bridgePayload = {
         id: "req_" + Date.now(),
-        channel: "perf-burst", // Mod ini mengarahkan e-Keberadaan memulangkan respon JSON terus
+        channel: "perf-burst",
         method: "loginWithPin",
         args: [loginEmail, pin, { userAgent: navigator.userAgent }, ""],
         origin: currentOrigin
@@ -289,7 +324,6 @@
 
       const result = await resp.json();
 
-      // Struktur respon daripada renderPagesBridgeTransport_
       if (result.ok && result.value && result.value.ok) {
         const authBoot = result.value.boot;
         CURRENT_USER = {
@@ -298,37 +332,57 @@
           role: authBoot.user.isAdmin ? "ADMIN" : "USER"
         };
 
-        // Muat turun data eviden dari pelayan SPES-SK@S
+        // Muat turun data pangkalan data SPES-SK@S
         await loadAppBundle();
         document.getElementById('loginPage').classList.add('hidden');
         document.getElementById('app-view').style.display = "flex";
       } else {
-        document.getElementById('loginError').innerText = result.error || "Emel atau PIN tidak tepat.";
+        showLoginError(result.error || "Emel atau PIN tidak tepat.");
       }
     } catch (e) {
-      document.getElementById('loginError').innerText = "Ralat komunikasi dengan pelayan e-Keberadaan: " + e.message;
+      showLoginError("Ralat komunikasi dengan pelayan e-Keberadaan: " + e.message);
     } finally {
       hideLoader();
     }
   }
 
+  function logout() {
+    CURRENT_USER = null;
+    document.getElementById('app-view').style.display = "none";
+    document.getElementById('loginPage').style.display = "flex";
+    document.getElementById('loginPage').classList.remove('hidden');
+    resetLogin();
+  }
+
   async function loadAppBundle() {
     showLoader("Memuatkan Data Eviden...");
-    const resp = await fetch(SPES_API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "get_bundle", tahun: "2026" })
-    });
-    const res = await resp.json();
-    if (res.status === "success") {
-      SYSTEM_BUNDLE = res;
-      document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
-      document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
-      document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = CURRENT_USER.role === "ADMIN" ? '' : 'none';
+    try {
+      const resp = await fetch(SPES_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "get_bundle", tahun: "2026" })
       });
-      renderDashboard();
+      const res = await resp.json();
+      if (res.status === "success") {
+        SYSTEM_BUNDLE = res;
+        document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
+        document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
+        document.querySelectorAll('.admin-only').forEach(el => {
+          el.style.display = CURRENT_USER.role === "ADMIN" ? '' : 'none';
+        });
+      }
+    } catch (err) {
+      console.error("Gagal memuat bundle SPES:", err);
+    } finally {
+      hideLoader();
     }
-    hideLoader();
+  }
+
+  function switchNav(moduleId, el) {
+    document.querySelectorAll('.nav-list li').forEach(li => li.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.querySelectorAll('.module-pane').forEach(pane => pane.style.display = 'none');
+    const target = document.getElementById('module-' + moduleId);
+    if (target) target.style.display = 'block';
   }
 </script>
 </body>
