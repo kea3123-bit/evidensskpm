@@ -725,6 +725,10 @@ function repairEvidenceAccess(ss,p) {
 }
 
 function evidenceAccessColumn_(sh){
+  if(typeof sh.getMaxColumns==="function" && sh.getMaxColumns()<15){
+    var current=sh.getMaxColumns();
+    sh.insertColumnsAfter(current,15-current);
+  }
   var header=String(sh.getRange(1,15).getValue()||"").trim();
   if(header && header!=="Akses Fail")throw new Error("Lajur O EVIDEN sudah digunakan: "+header);
   if(!header)sh.getRange(1,15).setValue("Akses Fail");
