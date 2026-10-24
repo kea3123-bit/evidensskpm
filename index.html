@@ -741,8 +741,10 @@
         SECURE_BACKEND=false;
         return;
       }
-      if(data.code==="UNKNOWN_ACTION" || data.code==="USE_AUTH_EXCHANGE"){
-        throw new Error("Backend SK@S belum menggunakan Code.gs terkini. Kemas kini Apps Script SK@S sahaja; e-Keberadaan tidak perlu diubah.");
+      if(data.code==="AUTH_REQUIRED" || data.code==="UNKNOWN_ACTION" ||
+         data.code==="USE_AUTH_EXCHANGE" ||
+         (data.status==="error" && /Sesi tidak sah atau tamat/i.test(data.message||""))){
+        throw new Error("Versi Apps Script SK@S tidak sepadan dengan frontend (auth_exchange belum tersedia). Dalam projek Apps Script SK@S, gantikan seluruh Code.gs dengan versi GitHub main, kemudian Deploy > Manage deployments > Edit > New version > Deploy. Jangan ubah Apps Script e-Keberadaan atau reset PIN.");
       }
       throw new Error("Pengesahan sesi SK@S gagal: "+(data.message||"Semak konfigurasi Apps Script SK@S."));
     }
