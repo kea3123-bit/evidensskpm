@@ -48,3 +48,11 @@ test("evidence list has required guide controls", () => {
   }
   assert.doesNotMatch(html,/action: "get_bundle", tahun: "2026"/);
 });
+
+test("e-Keberadaan authenticates PIN only once; SKAS exchanges existing session",()=>{
+  assert.match(html,/method: "loginWithPin"/);
+  assert.match(html,/establishBackendSession\(loginEmail,result\.value\.token\)/);
+  assert.match(html,/action:"auth_exchange",email,ekeToken/);
+  assert.doesNotMatch(html,/establishBackendSession\(loginEmail,pin\)/);
+  assert.doesNotMatch(html,/action:"auth_login"/);
+});
