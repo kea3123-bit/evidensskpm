@@ -118,3 +118,22 @@ Semak fail `Code.gs` projek **SK@S** (BUKAN projek e-Keberadaan): ia mesti menga
 Dalam versi baharu, semak halaman endpoint SK@S `/exec` melalui pelayar: ia memulangkan JSON dengan `version:"3.1"` dan `authMode:"auth_exchange"`. `get_version` melalui POST juga tersedia tanpa login, tidak mengeluarkan data dalaman dan tidak mengubah Sheets.
 
 **Jangan reset PIN, ubah Apps Script e-Keberadaan, atau jalankan populate_master untuk menyelesaikan masalah versi ini.** Setelah dua versi sepadan, barulah uji `getBootstrapData(ekeToken)` dengan sesi sebenar. Jangan kongsikan token atau PIN dalam tangkap layar/log.
+
+## 8. Error `You do not have permission to call UrlFetchApp.fetch`
+
+Ralat ini bermaksud akaun pelaksana **projek SK@S** belum memberi kebenaran OAuth untuk `https://www.googleapis.com/auth/script.external_request`. Entri manifest sahaja **tidak** memberi kebenaran.
+
+Jalankan langkah berikut hanya dalam projek **SPES-SK@S**:
+
+1. Pergi ke `Project Settings`, aktifkan `Show "appsscript.json" manifest file in editor`.
+2. Pastikan `appsscript.json` dalam **editor Apps Script aktif**, bukan hanya fail GitHub, menyenaraikan tiga scope: `spreadsheets`, `drive`, `script.external_request`.
+3. Tambah fail skrip `AuthorizeSKAS` dan tampal seluruh `apps-script/AuthorizeSKAS.gs` dari repo.
+4. Pilih `authorizeSKAS` pada dropdown fungsi, kemudian `Run` **daripada Apps Script editor** menggunakan **akaun yang deploy Web App SK@S**. Klik `Review permissions` dan benarkan akses. Google mendokumenkan `ScriptApp.requireScopes(ScriptApp.AuthMode.FULL,...)` untuk memaksa prompt pada permukaan sokongan seperti editor.
+5. Semak `Execution log`: ia mesti memaparkan `SKAS_URLFETCH_AUTHORIZED`; jika tidak, autorisasi masih gagal (atau pentadbir Google Workspace menyekat sambungan).
+6. Jalankan `diagnoseSKASConnection` dalam editor. `EKE_BRIDGE_PING` sepatutnya berjaya jika endpoint e-Keberadaan boleh dicapai. Jika masih gagal dengan `BRIDGE_CONNECTION_ERROR`, ia **masalah berlainan** daripada kebenaran OAuth.
+7. `Deploy > Manage deployments > Edit > New version > Deploy`. Pastikan SK@S frontend masih menggunakan URL `SPES_API_URL` ke deployment yang sama.
+8. Uji login SK@S. Jangan ganti/ubah Apps Script e-Keberadaan, token PIN, atau jalankan `populate_master`.
+
+**Nota:** jika `Execute as me`, kebenaran ialah milik akaun yang deploy SK@S. Jika `Execute as user accessing the web app`, setiap pengguna mungkin perlu membenarkan scope; ini biasanya tidak diinginkan untuk backend berkongsi Sheets terurus. Semak konfigurasi deployment sebelum mengubah tetapan.
+
+**Google references:** https://developers.google.com/apps-script/reference/script/script-app dan https://developers.google.com/apps-script/guides/services/authorization.
