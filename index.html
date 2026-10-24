@@ -629,7 +629,15 @@
         <!-- Indeks folder daripada ZIP pengguna: label rujukan, bukan fail pada Drive -->
         <div id="module-folder" class="module-pane" style="display:none;">
           <div class="page-title-box"><h2 class="page-title">Struktur Folder Induk SK@S 2026</h2></div>
-          <div class="info-strip"><strong>Indeks ZIP asal.</strong> Semua folder dalam arkib mengandungi fail .keep sahaja. Paparan ini membantu penyusunan nama/laluan tetapi <strong>tidak</strong> mencipta folder Google Drive atau mengandungi eviden sebenar. Bagi kod item dan huraian penilaian, rujuk menu Senarai Standard serta buku rasmi SK@S.</div>
+          <div class="info-strip"><strong>Perhatian: ZIP asal tidak sepenuhnya selaras dengan Buku SK@S.</strong> Jadual 2 pada halaman PDF 24–26 menyenaraikan aspek rasmi yang tidak terdapat dalam ZIP, dan beberapa folder mempunyai label atau nombor yang berbeza. Rujuk katalog perbandingan di bawah. Jangan pilih item berdasarkan nama ZIP sahaja.</div>
+          <div class="view-card">
+            <h3 class="panel-heading">Katalog Aspek Rasmi (Buku SK@S, Jadual 2)</h3>
+            <p class="helper-text">Ini ialah 38 kategori aspek dalam Standard 1–5, termasuk pecahan 3.1, 3.2 dan 3.3. Bilangan keseluruhan 115 subaspek dalam buku tidak sama dengan bilangan folder atau baris di sini. Rekod item terperinci terus dirujuk dari SENARAI STANDARD.</p>
+            <div class="table-responsive">
+              <table id="official-aspects-table"><thead><tr><th>Standard</th><th>Kod</th><th>Aspek rasmi</th><th>Status ZIP asal</th></tr></thead><tbody></tbody></table>
+            </div>
+          </div>
+          <div class="info-strip"><strong>Indeks ZIP asal:</strong> 12 kategori induk dan 80 laluan subfolder, semuanya placeholder .keep. Ia tidak mengandungi dokumen eviden sebenar dan tidak mencipta folder Google Drive.</div>
           <div class="view-card">
             <label for="folder-search" class="panel-heading">Cari folder, standard atau bidang</label>
             <input id="folder-search" class="form-control" type="search" oninput="filterFolders()" placeholder="Contoh: 3.3, kokurikulum, minit mesyuarat" style="width:100%;margin-bottom:12px">
@@ -833,6 +841,7 @@
         renderUploadForm();
         renderEvidenTable();
         renderFolderCatalog();
+        renderOfficialAspects();
         if (isPrivilegedUser()) renderUsersTable();
         return true;
       } catch (err) {
@@ -1058,7 +1067,7 @@
               <option value="STANDARD 3.2: PENGURUSAN KOKURIKULUM">Standard 3.2: Pengurusan Kokurikulum</option>
               <option value="STANDARD 3.3: PENGURUSAN HAL EHWAL MURID">Standard 3.3: Pengurusan HEM</option>
               <option value="STANDARD 4: PEMBELAJARAN DAN PEMUDAHCARAAN">Standard 4: Pembelajaran dan Pemudahcaraan</option>
-              <option value="STANDARD 5: KEMENJADIAN MURID">Standard 5: Kemenjadian Murid</option>
+              <option value="STANDARD 5: KEMENJADIAN MURID">Standard 5: Kemenjadian Murid, Pencapaian Guru dan Sekolah</option>
             </select>
           </div>
           <div class="form-group">
@@ -1796,6 +1805,33 @@
     function folderPath(index,childIndex){
       const entry=FOLDER_CATALOG[index];
       return entry?["SKAS_MASTER_FOLDER_2026",entry[0],...(childIndex>=0?[entry[1][childIndex]]:[])].filter(Boolean).join("/"):"";
+    }
+
+    // Jadual 2 Buku SK@S Salinan Digital, halaman PDF fizikal 24–26 / bercetak 11–13.
+    // This is a display/checklist index, NOT a substitute for the full 115-subaspek database.
+    const OFFICIAL_ASPECTS=[
+      [1,"Standard 1: Kepemimpinan",[["1.1","Pengetua/Guru Besar (PGB) Sebagai Peneraju"],["1.2","PGB Sebagai Pembimbing"],["1.3","PGB Sebagai Pendorong"]]],
+      [2,"Standard 2: Pengurusan Organisasi",[["2.1","Pengurusan Sumber Manusia"],["2.2","Pengurusan Aset"],["2.3","Pengurusan Kewangan"],["2.4","Pengurusan Sumber Pendidikan"],["2.5","Iklim"],["2.6","Pengurusan Perpaduan"],["2.7","Permuafakatan Strategik"]]],
+      [3,"Standard 3.1: Pengurusan Kurikulum",[["3.1.1","Ketetapan Pelaksanaan Kurikulum"],["3.1.2","Pengurusan Mata Pelajaran"],["3.1.3","Pengurusan Masa Instruksional"],["3.1.4","Pengurusan Penilaian Murid"]]],
+      [4,"Standard 3.2: Pengurusan Kokurikulum",[["3.2.1","Ketetapan Pelaksanaan Kokurikulum"],["3.2.2","Pengurusan Kelab/Persatuan"],["3.2.3","Pengurusan Badan Beruniform"],["3.2.4","Pengurusan Sukan/Permainan"],["3.2.5","Pengurusan Program Kecemerlangan Kokurikulum"],["3.2.6","Pengurusan Sukan Untuk Semua"],["3.2.7","Pengurusan Pentaksiran Kokurikulum"]]],
+      [5,"Standard 3.3: Pengurusan Hal Ehwal Murid",[["3.3.1","Ketetapan Pelaksanaan Hal Ehwal Murid"],["3.3.2","Pengurusan Disiplin Murid"],["3.3.3","Pengurusan Keselamatan Murid"],["3.3.4","Pengurusan Kesihatan Murid"],["3.3.5","Pengurusan Bantuan Pelajaran Murid"],["3.3.6","Pengurusan Perkhidmatan Bimbingan dan Kaunseling"],["3.3.7","Pengurusan Pentaksiran Psikometrik"]]],
+      [6,"Standard 4: Pembelajaran dan Pemudahcaraan",[["4.1","Guru Sebagai Perancang"],["4.2","Guru Sebagai Pengawal"],["4.3","Guru Sebagai Pembimbing"],["4.4","Guru Sebagai Pendorong"],["4.5","Guru Sebagai Penilai"],["4.6","Murid Sebagai Pembelajar Aktif"]]],
+      [7,"Standard 5: Kemenjadian Murid, Pencapaian Guru dan Sekolah",[["5.1","Kemenjadian Murid dalam Akademik"],["5.2","Kemenjadian Murid dalam Kokurikulum"],["5.3","Kemenjadian Sahsiah Murid"],["5.4","Pencapaian Guru dan Pencapaian Sekolah"]]]
+    ];
+    const KNOWN_WRONG_ZIP_LABEL_CODES = new Set([
+      "3.2.1","3.2.2","3.2.3","3.2.4",
+      "3.3.1","3.3.3","3.3.4","3.3.5","3.3.6","3.3.7",
+      "4.1","4.2","4.3","4.4","4.5",
+      "5.1","5.2","5.3","5.4"
+    ]);
+    function renderOfficialAspects(){
+      const rows=OFFICIAL_ASPECTS.flatMap(([index,title,aspects])=>aspects.map(([code,label])=>{
+        const folder=(FOLDER_CATALOG[index][1]||[]).find(name=>name.split("_")[0]===code);
+        const status=!folder ? "Tiada folder kod ini" :
+          KNOWN_WRONG_ZIP_LABEL_CODES.has(code)?"Label tidak sepadan":"Kod ada (sahkan item)";
+        return '<tr><td>'+escapeHtml(title)+'</td><td><b>'+escapeHtml(code)+'</b></td><td>'+escapeHtml(label)+'</td><td>'+escapeHtml(status)+'</td></tr>';
+      }));
+      document.querySelector("#official-aspects-table tbody").innerHTML=rows.join("");
     }
     function renderFolderCatalog(){
       const node=document.getElementById("folder-catalog");
