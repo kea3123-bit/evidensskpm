@@ -18,9 +18,27 @@
 - Validasi muat naik: sekurang-kurangnya satu PDCA dan Jenis Eviden, standard/aspek/item sah, tepat satu kaedah (URL **atau** fail), had fail 15 MB dan URL HTTPS.
 - Tahun aktif dihantar oleh bundle backend, bukan nilai literal 2026 dalam permintaan frontend; rekod tahun terdahulu tidak dipaparkan dalam analisis aktif.
 - Indeks 12 folder induk ZIP dengan carian dan butang salin laluan (bukan operasi mencipta folder Drive).
+- Paparan **38 aspek rasmi** daripada Jadual 2 Buku SK@S (PDF fizikal halaman 24–26) serta perbandingan kod dan label folder ZIP yang tiada/tidak sepadan.
 - UI telefon: menu sisi responsif serta tetapan cetakan A4.
 - Teks daripada Google Sheets dikodkan sebelum paparan di jadual/modal dan penapis pautan bukan HTTPS.
 - Ujian `node --test` untuk sintaks, kawalan penting dan penapisan tahun.
+
+## Penemuan ketidakpadanan ZIP asal dengan instrumen rasmi
+
+Buku SK@S Jadual 2 (halaman fizikal PDF 24–26 / bercetak 11–13) menyatakan **115 subaspek keseluruhan**, termasuk komponen Kekuatan Kami. Ia **bukan** sekadar jumlah folder Standard 1–5.
+
+| Bidang | Ketidakpadanan ZIP asal |
+|---|---|
+| Standard 1 | Tiada **1.3 PGB Sebagai Pendorong**. |
+| Standard 2 | Tiada **2.7 Permuafakatan Strategik**. |
+| Standard 3.1 | Tiada **3.1.3 Pengurusan Masa Instruksional** dan **3.1.4 Pengurusan Penilaian Murid**. |
+| Standard 3.2 | Nombor 3.2.1–3.2.4 berlabel berbeza daripada instrumen; tiada 3.2.5–3.2.7. |
+| Standard 3.3 | Beberapa label 3.3.1–3.3.7 berbeza daripada instrumen, termasuk ketetapan HEM dan pentaksiran psikometrik. |
+| Standard 4 | Kod/label 4.1–4.5 tidak sepadan dengan peranan Guru; tiada **4.6 Murid Sebagai Pembelajar Aktif**. |
+| Standard 5 | 5.1–5.4 sepatutnya akademik, kokurikulum, sahsiah, serta pencapaian guru & sekolah. |
+| Kekuatan Kami | Aspek A1–A9 tidak wujud sebagai kategori induk dalam ZIP asal. |
+
+Struktur baharu yang disemak dibuat sebagai ZIP berasingan (placeholder sahaja), tidak mengubah atau memadam arkib pengguna. Rujukan item terperinci masih perlu dipastikan daripada SENARAI STANDARD dan dokumen rasmi.
 
 ## Perlu diuji pada backend Google Apps Script (belum termasuk dalam repo)
 
