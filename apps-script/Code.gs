@@ -192,7 +192,7 @@ function doPost(e) {
   return json_(handleAction(p));
 }
 var ADMIN_ACTIONS_ = [
-  "delete_eviden","update_settings",
+  "delete_eviden","update_settings","repair_evidence_access",
   "save_jawatankuasa","update_jawatankuasa","delete_jawatankuasa",
   "save_standard","update_standard","delete_standard","sync_standard_folders","import_zip_standards","sync_zip_master_folders",
   "save_pps","update_pps","delete_pps",
@@ -224,6 +224,7 @@ function handleAction(params) {
         return saveEviden(ss,params);
       case "update_eviden": return updateEviden(ss,params,auth);
       case "delete_eviden": return deleteEviden(ss,params);
+      case "repair_evidence_access": return repairEvidenceAccess(ss,params);
       case "update_settings": return updateSettings(ss,params);
       case "save_jawatankuasa": return saveJawatankuasa(ss,params);
       case "update_jawatankuasa": return updateJawatankuasa(ss,params);
@@ -638,12 +639,93 @@ function validateEviden_(ss,p){
   });
   if(!ok)throw new Error("Standard / Aspek / Item tidak wujud.");
 }
+
+/**
+ * Share only an individual uploaded file, NEVER its parent folder.
+ * Users may opt out (PRIVATE) when evidence includes sensitive school data.
+ * Drive/Workspace administrators can prohibit ANYONE_WITH_LINK.
+ */
+function setEvidenceAccess_(file,choice) {
+  if (choice==="private") return {status:"private"};
+  try {
+    var access=file.getSharingAccess();
+    var permission=file.getSharingPermission();
+    if(access!==DriveApp.Access.ANYONE_WITH_LINK && access!==DriveApp.Access.ANYONE) {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
+    } else if (permission!==DriveApp.Permission.VIEW && permission!==DriveApp.Permission.EDIT) {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
+    }
+    return {status:"link"};
+  } catch(err) {
+    Logger.log("SKAS evidence sharing blocked: "+String(err));
+    return {status:"restricted",warning:"Fail disimpan, tetapi perkongsian 'Sesiapa yang mempunyai pautan — Lihat' tidak dibenarkan. Semak polisi Google Workspace/Shared Drive atau kongsikan fail secara manual."};
+  }
+}
+/** Accept only upload-generated Drive file URLs, not arbitrary user-provided links. */
+function uploadedDriveFileId_(url) {
+  var match=String(url||"").trim().match(/^https:\/\/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]{6,})(?:\/|[?#]|$)/i);
+  return match?match[1]:"";
+}
+/** Verify managed location before changing sharing on an existing record. */
+function isInsideEvidenceRoot_(file,rootId) {
+  var queue=[],seen={},depth=0;
+  var parents=file.getParents();
+  while(parents.hasNext())queue.push(parents.next());
+  while(queue.length && depth<100){
+    var folder=queue.shift(),id=folder.getId();
+    if(id===rootId)return true;
+    if(seen[id])continue;
+    seen[id]=true;depth++;
+    var next=folder.getParents();
+    while(next.hasNext())queue.push(next.next());
+  }
+  return false;
+}
+/**
+ * ADMIN-ONLY, opted-in repair for files already indexed by EVIDEN:
+ * never touch external links, private documents outside the configured root,
+ * or folders themselves. Processes 10 rows per call, preserving source data.
+ */
+function repairEvidenceAccess(ss,p) {
+  var sheet=ss.getSheetByName("EVIDEN");
+  if(!sheet)throw new Error("Helaian EVIDEN tidak wujud.");
+  var rootId=String(getSettings_(ss)["FOLDER DRIVE EVIDEN"]||getSettings_(ss)["FOLDER DRIVE"]||"").trim();
+  if(!rootId||rootId==="ROOT")throw new Error("ID Folder Drive Eviden tidak sah. Tidak boleh mengesahkan pemilikan fail.");
+  DriveApp.getFolderById(rootId); // Abort before permission changes if root does not exist.
+  var rows=sheet.getDataRange().getValues();
+  var total=Math.max(0,rows.length-1);
+  var offset=Math.max(0,Math.min(total,parseInt(p.offset,10)||0));
+  var nextOffset=Math.min(total,offset+10);
+  var results={status:"success",processed:nextOffset-offset,repaired:0,already:0,skipped:0,failed:0,nextOffset:nextOffset,remaining:total-nextOffset,total:total};
+  for(var i=offset;i<nextOffset;i++){
+    var fileId=uploadedDriveFileId_(rows[i+1][11]);
+    if(!fileId){results.skipped++;continue;}
+    try{
+      var file=DriveApp.getFileById(fileId);
+      if(!isInsideEvidenceRoot_(file,rootId)){results.skipped++;continue;}
+      var previous=file.getSharingAccess();
+      var permission=file.getSharingPermission();
+      if((previous===DriveApp.Access.ANYONE_WITH_LINK||previous===DriveApp.Access.ANYONE) &&
+        (permission===DriveApp.Permission.VIEW||permission===DriveApp.Permission.EDIT)){
+        results.already++;continue;
+      }
+      var share=setEvidenceAccess_(file,"link");
+      if(share.status==="link")results.repaired++;
+      else results.failed++;
+    }catch(err){
+      results.failed++;
+      Logger.log("SKAS old evidence sharing repair failed on row "+(i+2)+": "+String(err));
+    }
+  }
+  return results;
+}
+
 function saveEviden(ss,p){
   validateEviden_(ss,p);
   var bundleYear=String(getSystemBundleYear_(ss));
   var isFile=Boolean(p.fileBase64&&p.fileName),isLink=Boolean(p.pautanLuar);
   if(isFile===isLink)throw new Error("Pilih satu sahaja: fail ATAU pautan HTTPS.");
-  var fileUrl="";
+  var fileUrl="",shareStatus="external",shareWarning="";
   if(isLink){
     if(!safeHttps_(p.pautanLuar))throw new Error("URL mesti menggunakan HTTPS.");
     fileUrl=String(p.pautanLuar).trim();
@@ -674,7 +756,11 @@ function saveEviden(ss,p){
     var folder=DriveApp.getFolderById(refFolder.id);
     var blob=Utilities.newBlob(bytes, String(p.fileMime||"application/octet-stream"), String(p.fileName).replace(/[\\/]/g,"_"));
     var file=folder.createFile(blob);
-    // No ANYONE_WITH_LINK: leave Drive sharing private/inherited.
+    // Record the upload EVEN IF school domain policy blocks public sharing.
+    // Never silently leave a user thinking the link is accessible.
+    var sharing=setEvidenceAccess_(file,p.shareAccess==="private"?"private":"link");
+    shareStatus=sharing.status;
+    shareWarning=sharing.warning||"";
     fileUrl=file.getUrl();
   }
   var lock=LockService.getScriptLock();
@@ -685,7 +771,7 @@ function saveEviden(ss,p){
     var now=Utilities.formatDate(new Date(),"Asia/Kuala_Lumpur","yyyy-MM-dd HH:mm:ss");
     sheet.appendRow([id,bundleYear,safeCell_(p.pemuatNaik),p.standard,p.noItem,p.aspek,p.huraian,
       p.pdca,safeCell_(p.jenis),safeCell_(p.tajuk),safeCell_(p.catatan),fileUrl,now,p.pemuatEmail]);
-    return {status:"success",id:id,url:fileUrl};
+    return {status:"success",id:id,url:fileUrl,accessStatus:shareStatus,accessWarning:shareWarning};
   }finally{lock.releaseLock();}
 }
 function getSystemBundleYear_(ss){
