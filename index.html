@@ -150,6 +150,45 @@
     #universal-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2500; align-items: center; justify-content: center; }
     .modal-content-box { background: var(--bg-card); padding: 25px 30px; border-radius: 14px; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
+
+    /* SK@S 2026: responsive navigation, readable evidence and folder index */
+    .helper-text { color:var(--text-muted);font-size:.82rem;line-height:1.5;margin-top:8px; }
+    .info-strip { background:#effcfb;border:1px solid #a7e7de;border-left:4px solid #00897b;border-radius:10px;padding:12px 16px;margin:12px 0 18px;font-size:.85rem;line-height:1.6; }
+    .panel-heading { font-size:1rem;font-weight:800;margin-bottom:13px; }
+    .coverage-bar { background:#e2e8f0;height:9px;border-radius:10px;overflow:hidden;min-width:95px; }
+    .coverage-fill { background:#0d9488;height:100%;border-radius:10px; }
+    .folder-group { border:1px solid var(--border-color);border-radius:10px;margin:9px 0;overflow:hidden; }
+    .folder-group summary { padding:13px 16px;cursor:pointer;font-weight:700;background:var(--bg-main);line-height:1.5; }
+    .folder-list { padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:9px; }
+    .folder-path { background:var(--bg-main);padding:10px;border-radius:9px;overflow-wrap:anywhere;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.82rem; }
+    .folder-path button {border:1px solid var(--border-color);border-radius:7px;cursor:pointer;padding:6px 9px;background:var(--bg-card);flex-shrink:0; }
+    .filter-toolbar {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+    .filter-toolbar button {border:1px solid var(--border-color);border-radius:8px;background:var(--bg-card);padding:9px 12px;cursor:pointer;}
+    .evidence-title { background:none;border:none;color:var(--accent-teal);font-weight:700;cursor:pointer;text-align:left;line-height:1.5;font-size:.9rem; }
+    .evidence-title:hover {text-decoration:underline}
+    .mobile-nav-button { display:none;border:1px solid var(--border-color);border-radius:8px;padding:8px;background:transparent;cursor:pointer; }
+    .sidebar-overlay {display:none;}
+    @media(max-width:850px){
+      .mobile-nav-button {display:inline-flex;}
+      .sidebar{transform:translateX(-100%);transition:transform .2s;width:min(280px,85vw);z-index:350}
+      body.sidebar-open .sidebar{transform:translateX(0)}
+      body.sidebar-open .sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:340}
+      .main-wrapper{margin-left:0;width:100%}
+      .topbar{height:auto;min-height:65px;padding:12px 15px;gap:10px;flex-wrap:wrap}
+      .topbar>div:last-child{gap:10px!important;flex-wrap:wrap}
+      .content-area{padding:16px}
+      .view-card{padding:16px}
+      .pdca-selector{flex-wrap:wrap}
+      .pdca-btn{min-width:40%}
+      .page-title{font-size:1.2rem}
+      .folder-list{grid-template-columns:1fr}
+    }
+    @page {size:A4 portrait;margin:13mm}
+    @media print {
+      .folder-path button,.filter-toolbar,.mobile-nav-button{display:none!important}
+      table{font-size:9pt} td,th{padding:6px;overflow-wrap:anywhere}
+      thead{display:table-header-group} tr{break-inside:avoid}
+    }
     @media print {
       .sidebar, .topbar, .no-print, .btn-action-icon, .form-grid { display: none !important; }
       .main-wrapper { margin-left: 0 !important; width: 100% !important; }
@@ -215,6 +254,7 @@
     </div>
   </section>
 
+  <div class="sidebar-overlay no-print" onclick="closeMobileNav()" aria-hidden="true"></div>
   <!-- VIEW 2: KESELURUHAN SISTEM SPES-SK@S -->
   <div id="app-view">
     <aside class="sidebar">
@@ -232,6 +272,7 @@
           <li onclick="switchNav('pps', this)"><a href="#"><i class="fa-solid fa-users-rectangle"></i> Senarai PPS</a></li>
           <li onclick="switchNav('muatnaik', this)"><a href="#"><i class="fa-solid fa-cloud-arrow-up"></i> Muat Naik Eviden</a></li>
           <li onclick="switchNav('senarai_eviden', this)"><a href="#"><i class="fa-solid fa-folder-open"></i> Senarai Eviden</a></li>
+          <li onclick="switchNav('folder', this)"><a href="#"><i class="fa-solid fa-folder-tree"></i> Struktur Folder SK@S</a></li>
         </ul>
         <div class="nav-label admin-only">Pentadbir</div>
         <ul class="nav-list admin-only">
@@ -246,7 +287,7 @@
 
     <main class="main-wrapper">
       <header class="topbar">
-        <div><h3 style="font-size: 1rem;" id="bar-school-name">SMK BANDAR BARU SUNGAI LALANG</h3></div>
+        <div style="display:flex;align-items:center;gap:10px"><button class="mobile-nav-button no-print" type="button" aria-label="Buka menu" onclick="toggleMobileNav()"><i class="fa-solid fa-bars"></i></button><h3 style="font-size: 1rem;" id="bar-school-name">SMK BANDAR BARU SUNGAI LALANG</h3></div>
         <div style="display:flex; align-items:center; gap:20px;">
           <span style="font-size:0.8rem; font-weight:700; color:#004d40; background:#e0f2f1; padding:4px 10px; border-radius:12px;" id="bar-year-badge">2026</span>
           <div><b id="bar-user-name">Pengguna</b> <span id="bar-user-role" style="font-size:0.7rem; background:#004d40; color:#fff; padding:3px 8px; border-radius:10px; margin-left:5px;">USER</span></div>
@@ -286,6 +327,15 @@
           <div class="view-card">
             <h4 style="margin-bottom:15px;">Statistik Jenis Eviden</h4>
             <div id="eviden-types-bars"></div>
+          </div>
+          <div class="view-card">
+            <h4 class="panel-heading">Liputan Eviden Mengikut Standard</h4>
+            <p class="helper-text">Bilangan item dengan sekurang-kurangnya satu eviden, bukan skor pematuhan rasmi SK@S. Bandingkan dengan SENARAI STANDARD dalam pangkalan data.</p>
+            <div class="table-responsive"><table id="coverage-table"><thead><tr><th>Standard</th><th>Item Rujukan</th><th>Item Ada Eviden</th><th>Liputan</th><th class="no-print">Semak</th></tr></thead><tbody></tbody></table></div>
+          </div>
+          <div class="view-card">
+            <h4 class="panel-heading">Sumbangan Pemuat Naik</h4>
+            <div class="table-responsive"><table id="uploader-report"><thead><tr><th>Nama</th><th>Bil. Eviden</th><th class="no-print">Semak</th></tr></thead><tbody></tbody></table></div>
           </div>
         </div>
 
@@ -543,9 +593,11 @@
           </div>
           <div class="view-card no-print">
             <div class="form-grid">
-              <select id="filter-standard" class="form-control" onchange="filterEvidenTable()">
+              <select id="filter-standard" class="form-control" onchange="populateItemFilter();filterEvidenTable()">
                 <option value="">Semua Standard</option>
               </select>
+              <select id="filter-item" class="form-control" onchange="filterEvidenTable()"><option value="">Semua Item</option></select>
+              <select id="filter-uploader" class="form-control" onchange="filterEvidenTable()"><option value="">Semua Pemuat Naik</option></select>
               <select id="filter-pdca" class="form-control" onchange="filterEvidenTable()">
                 <option value="">Semua PDCA</option>
                 <option value="PLAN">PLAN</option>
@@ -553,7 +605,12 @@
                 <option value="CHECK">CHECK</option>
                 <option value="ACTION">ACTION</option>
               </select>
-              <input type="text" id="filter-search" class="form-control" placeholder="Cari tajuk eviden..." onkeyup="filterEvidenTable()">
+              <input type="search" id="filter-search" class="form-control" placeholder="Cari tajuk, aspek, ID atau catatan..." oninput="filterEvidenTable()">
+            </div>
+            <div class="filter-toolbar">
+              <span id="eviden-visible-count" aria-live="polite">0 rekod dipaparkan</span>
+              <button type="button" onclick="resetEvidenFilters()"><i class="fa-solid fa-xmark"></i> Reset Saringan</button>
+              <button type="button" onclick="loadAppBundle()"><i class="fa-solid fa-arrows-rotate"></i> Segar Semula</button>
             </div>
           </div>
           <div class="view-card">
@@ -565,6 +622,19 @@
                 <tbody></tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+
+        <!-- Indeks folder daripada ZIP pengguna: label rujukan, bukan fail pada Drive -->
+        <div id="module-folder" class="module-pane" style="display:none;">
+          <div class="page-title-box"><h2 class="page-title">Struktur Folder Induk SK@S 2026</h2></div>
+          <div class="info-strip"><strong>Indeks ZIP asal.</strong> Semua folder dalam arkib mengandungi fail .keep sahaja. Paparan ini membantu penyusunan nama/laluan tetapi <strong>tidak</strong> mencipta folder Google Drive atau mengandungi eviden sebenar. Bagi kod item dan huraian penilaian, rujuk menu Senarai Standard serta buku rasmi SK@S.</div>
+          <div class="view-card">
+            <label for="folder-search" class="panel-heading">Cari folder, standard atau bidang</label>
+            <input id="folder-search" class="form-control" type="search" oninput="filterFolders()" placeholder="Contoh: 3.3, kokurikulum, minit mesyuarat" style="width:100%;margin-bottom:12px">
+            <p id="folder-count" class="helper-text"></p>
+            <div id="folder-catalog"></div>
           </div>
         </div>
 
@@ -625,6 +695,8 @@
     let CURRENT_USER = null;
     let SYSTEM_BUNDLE = null;
     let loginEmail = "";
+    let EVIDENCE_ROWS = [];
+    let LAST_DATA_ERROR = "";
 
     // -------------------------------------------------------------
     // MODAL & LOADER
@@ -666,7 +738,8 @@
     // LOG MASUK
     // -------------------------------------------------------------
     function checkEmail() {
-      const email = document.getElementById('delimaEmail').value.trim();
+      const email = document.getElementById('delimaEmail').value.trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showLoginError("Format emel tidak sah."); return; }
       if (!email) { showLoginError("Sila masukkan Emel DELIMa."); return; }
       loginEmail = email;
       hideLoginError();
@@ -687,7 +760,7 @@
 
     async function executeLogin() {
       const pin = document.getElementById('loginPin').value.trim();
-      if (!pin) { showLoginError("Sila masukkan PIN."); return; }
+      if (!/^\d{6}$/.test(pin)) { showLoginError("Masukkan PIN 6 digit."); return; }
       showLoader("Mengesahkan PIN melalui e-Keberadaan...");
       hideLoginError();
 
@@ -715,7 +788,7 @@
             name: authBoot.user.name,
             role: authBoot.user.isAdmin ? "ADMIN" : "USER"
           };
-          await loadAppBundle();
+          if (!await loadAppBundle()) throw new Error(LAST_DATA_ERROR || "Data SK@S tidak dapat dimuatkan.");
           document.getElementById('loginPage').classList.add('hidden');
           document.getElementById('app-view').style.display = "flex";
         } else {
@@ -736,44 +809,52 @@
       resetLogin();
     }
 
+
     async function loadAppBundle() {
       showLoader("Memuatkan Data SK@S...");
+      LAST_DATA_ERROR = "";
       try {
+        // Tahun aktif ditentukan oleh SETTING pada backend, bukan nilai 2026 yang dikunci.
         const resp = await fetch(SPES_API_URL, {
           method: "POST",
-          body: JSON.stringify({ action: "get_bundle", tahun: "2026" })
+          body: JSON.stringify({ action: "get_bundle" })
         });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
         const res = await resp.json();
-        if (res.status === "success") {
-          SYSTEM_BUNDLE = res;
-          renderGlobalStates();
-          renderDashboard();
-          renderJawatankuasa();
-          renderChecklist();
-          renderStandards();
-          renderPPS();
-          renderUploadForm();
-          renderEvidenTable();
-          if (CURRENT_USER.role === "ADMIN") {
-            renderUsersTable();
-          }
-        }
+        if (res.status !== "success") throw new Error(res.message || "Respons pangkalan data tidak berjaya.");
+        if (!res.activeYear || !res.settings) throw new Error("Konfigurasi tahun aktif/setting tidak diterima.");
+        SYSTEM_BUNDLE = res;
+        renderGlobalStates();
+        renderDashboard();
+        renderJawatankuasa();
+        renderChecklist();
+        renderStandards();
+        renderPPS();
+        renderUploadForm();
+        renderEvidenTable();
+        renderFolderCatalog();
+        if (isPrivilegedUser()) renderUsersTable();
+        return true;
       } catch (err) {
+        LAST_DATA_ERROR = String(err.message || err);
         console.error("Gagal memuat bundle SPES:", err);
+        if (!document.getElementById("loginPage").classList.contains("hidden")) showLoginError("Gagal memuat data SK@S: "+LAST_DATA_ERROR);
+        else alert("Gagal menyegarkan data SK@S: "+LAST_DATA_ERROR);
+        return false;
       } finally {
         hideLoader();
       }
     }
 
     function renderGlobalStates() {
-      document.querySelectorAll('.active-year-txt').forEach(el => el.innerText = SYSTEM_BUNDLE.activeYear);
+      document.querySelectorAll('.active-year-txt').forEach(el => { if(el.matches('input')) el.value=SYSTEM_BUNDLE.activeYear; else el.textContent=SYSTEM_BUNDLE.activeYear; });
       document.getElementById('bar-year-badge').innerText = SYSTEM_BUNDLE.activeYear;
       document.getElementById('bar-school-name').innerText = SYSTEM_BUNDLE.settings["NAMA SEKOLAH"] || "SMK BANDAR BARU SUNGAI LALANG";
       document.getElementById('sb-school-code').innerText = "KOD: " + (SYSTEM_BUNDLE.settings["KOD SEKOLAH"] || "KEA3123");
       document.getElementById('bar-user-name').innerText = CURRENT_USER.name;
       document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
 
-      const isAdmin = CURRENT_USER.role === "ADMIN";
+      const isAdmin = isPrivilegedUser();
       document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
 
       if (isAdmin) {
@@ -791,7 +872,7 @@
       const container = document.getElementById('org-chart-container');
       const levels = {};
       const list = SYSTEM_BUNDLE.jawatankuasa || [];
-      const isAdmin = CURRENT_USER && CURRENT_USER.role === "ADMIN";
+      const isAdmin = isPrivilegedUser();
 
       list.forEach(j => {
         const lvl = j['Level Carta'] || '1';
@@ -925,7 +1006,7 @@
     function renderStandards() {
       const tbody = document.querySelector('#standard-table tbody');
       const list = SYSTEM_BUNDLE.standards || [];
-      const isAdmin = CURRENT_USER && CURRENT_USER.role === "ADMIN";
+      const isAdmin = CURRENT_USER && isPrivilegedUser();
 
       tbody.innerHTML = list.map(s => `
         <tr>
@@ -1058,7 +1139,7 @@
     function renderPPS() {
       const tbody = document.querySelector('#pps-table tbody');
       const list = SYSTEM_BUNDLE.pps || [];
-      const isAdmin = CURRENT_USER && CURRENT_USER.role === "ADMIN";
+      const isAdmin = CURRENT_USER && isPrivilegedUser();
 
       // 1. Populasi Dropdown Borang Tambah PPS (Admin)
       const ppsStdSel = document.getElementById('add-pps-standard');
@@ -1193,7 +1274,7 @@
     function renderChecklist() {
       const tbody = document.querySelector('#checklist-table tbody');
       const list = SYSTEM_BUNDLE.checklist || [];
-      const isAdmin = CURRENT_USER && CURRENT_USER.role === "ADMIN";
+      const isAdmin = CURRENT_USER && isPrivilegedUser();
 
       tbody.innerHTML = list.map(c => `
         <tr>
@@ -1320,13 +1401,14 @@
     // DASHBOARD & EVIDEN
     // -------------------------------------------------------------
     function renderDashboard() {
-      const list = SYSTEM_BUNDLE.eviden || [];
+      const list = evidenceForActiveYear();
       document.getElementById('stat-total').innerText = list.length;
       let pd = 0, ca = 0, typeCounts = {};
 
       list.forEach(item => {
-        if (item.pdca.includes("PLAN") || item.pdca.includes("DO")) pd++;
-        if (item.pdca.includes("CHECK") || item.pdca.includes("ACTION")) ca++;
+        const phases = String(item.pdca || "").split(",").map(p => p.trim().toUpperCase());
+        if (phases.includes("PLAN") || phases.includes("DO")) pd++;
+        if (phases.includes("CHECK") || phases.includes("ACTION")) ca++;
         if (item.jenis) {
           item.jenis.split(',').forEach(t => {
             t = t.trim();
@@ -1342,17 +1424,19 @@
       container.innerHTML = Object.keys(typeCounts).map(k => `
         <div style="margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600;">
-            <span>${k}</span><span>${typeCounts[k]}</span>
+            <span>${escapeHtml(k)}</span><span>${typeCounts[k]}</span>
           </div>
           <div style="height:8px; background:var(--border-color); border-radius:4px; overflow:hidden; margin-top:4px;">
             <div style="height:100%; width:${Math.min((typeCounts[k]/Math.max(list.length,1))*100, 100)}%; background:var(--accent-teal);"></div>
           </div>
         </div>
       `).join('') || '<p style="color:var(--text-muted); font-size:0.85rem;">Tiada rekod jenis eviden.</p>';
+      renderCoveragePanel();
     }
 
     function renderUploadForm() {
       document.getElementById('upload-user-name').value = CURRENT_USER.name;
+      document.getElementById('upload-year').value = SYSTEM_BUNDLE.activeYear;
       const stdSelect = document.getElementById('upload-standard');
       const uniqueStandards = [...new Set((SYSTEM_BUNDLE.standards || []).map(s => s.Standard))];
       stdSelect.innerHTML = '<option value="">Pilih Standard...</option>' + uniqueStandards.map(s => `<option value="${escapeAttr(s)}">${escapeAttr(s)}</option>`).join('');
@@ -1393,7 +1477,7 @@
       document.getElementById('upload-huraian').value = match ? match.Huraian : "";
     }
 
-    function togglePDCA(btn) { btn.classList.toggle('active'); }
+    function togglePDCA(btn) { btn.classList.toggle('active'); btn.setAttribute('aria-pressed', btn.classList.contains('active')); }
 
     function validateFileSize(input) {
       if (input.files[0] && input.files[0].size > 15 * 1024 * 1024) {
@@ -1402,111 +1486,183 @@
       }
     }
 
+
     async function submitEviden() {
+      if (!CURRENT_USER || !SYSTEM_BUNDLE) return alert("Sila log masuk semula.");
       const standard = document.getElementById('upload-standard').value;
       const aspek = document.getElementById('upload-aspek').value;
       const item = document.getElementById('upload-item').value;
       const huraian = document.getElementById('upload-huraian').value;
-      const tajuk = document.getElementById('upload-tajuk').value;
-      const catatan = document.getElementById('upload-catatan').value;
-      const pautan = document.getElementById('upload-pautan').value;
+      const tajuk = document.getElementById('upload-tajuk').value.trim();
+      const catatan = document.getElementById('upload-catatan').value.trim();
+      const pautan = document.getElementById('upload-pautan').value.trim();
       const fileInput = document.getElementById('upload-file');
-
-      const pdca = Array.from(document.querySelectorAll('.pdca-btn.active')).map(b => b.dataset.phase).join(',');
-      const jenis = Array.from(document.querySelectorAll('input[name="eviden-jenis-cb"]:checked')).map(c => c.value).join(',');
-
-      if (!standard || !aspek || !item || !tajuk || !pdca || !jenis) {
-        return alert("Sila lengkapkan semua medan wajib (*)");
+      const file = fileInput.files[0];
+      const pdca = [...document.querySelectorAll('.pdca-btn.active')].map(b => b.dataset.phase).join(',');
+      const jenis = [...document.querySelectorAll('input[name="eviden-jenis-cb"]:checked')].map(c => c.value).join(',');
+      if (!standard || !aspek || !item || !tajuk || !pdca || !jenis) return alert("Sila lengkapkan semua medan wajib termasuk PDCA dan Jenis Eviden.");
+      if (!(SYSTEM_BUNDLE.standards || []).some(x => x.Standard === standard && x.Aspek === aspek && String(x['No Item']) === item)) {
+        return alert("Gabungan Standard / Aspek / No Item tidak wujud dalam SENARAI STANDARD.");
       }
-
-      showLoader("Menyimpan Eviden ke Google Drive/Sheets...");
-      let base64 = "", fileName = "", fileMime = "";
-      if (fileInput.files[0]) {
-        const file = fileInput.files[0];
-        fileName = file.name;
-        fileMime = file.type;
-        base64 = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = () => res(r.result.split(',')[1]);
-          r.readAsDataURL(file);
+      if (Boolean(pautan) === Boolean(file)) return alert("Pilih SATU kaedah sahaja: Pautan URL ATAU muat naik fail.");
+      if (pautan && !safeHref(pautan)) return alert("Pautan eviden mesti URL https:// yang sah.");
+      if (file && file.size > 15*1024*1024) return alert("Fail melebihi had 15 MB.");
+      showLoader("Menyimpan Eviden ke Google Drive / Google Sheets...");
+      try {
+        let base64 = "", fileName = "", fileMime = "";
+        if (file) {
+          fileName=file.name; fileMime=file.type || "application/octet-stream";
+          base64 = await new Promise((resolve,reject) => {
+            const reader=new FileReader();
+            reader.onerror=()=>reject(new Error("Gagal membaca fail"));
+            reader.onload=()=>resolve(String(reader.result).split(",")[1] || "");
+            reader.readAsDataURL(file);
+          });
+        }
+        const response = await fetch(SPES_API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action:"save_eviden", tahun:SYSTEM_BUNDLE.activeYear, pemuatNaik:CURRENT_USER.name,
+            standard,aspek,noItem:item,huraian,pdca,jenis,tajuk,catatan,
+            pautanLuar:pautan,fileBase64:base64,fileName,fileMime
+          })
         });
-      }
-
-      const res = await (await fetch(SPES_API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "save_eviden",
-          tahun: SYSTEM_BUNDLE.activeYear,
-          pemuatNaik: CURRENT_USER.name,
-          standard, aspek, noItem: item, huraian, pdca, jenis, tajuk, catatan,
-          pautanLuar: pautan, fileBase64: base64, fileName, fileMime
-        })
-      })).json();
-
-      hideLoader();
-      if (res.status === "success") {
-        alert("Eviden berjaya disimpan!");
-        await loadAppBundle();
-        switchNav('senarai_eviden', document.querySelectorAll('.nav-list li')[6]);
-      } else {
-        alert("Ralat: " + res.message);
-      }
+        if (!response.ok) throw new Error("HTTP "+response.status);
+        const res = await response.json();
+        if (res.status !== "success") throw new Error(res.message || "Simpanan tidak berjaya");
+        alert("Eviden disimpan" + (res.id ? " — ID: "+res.id : "") + ". Sila semak akses pautan dalam Senarai Eviden.");
+        document.getElementById('upload-tajuk').value="";
+        document.getElementById('upload-catatan').value="";
+        document.getElementById('upload-pautan').value="";
+        fileInput.value="";
+        if (await loadAppBundle()) switchNav('senarai_eviden', document.querySelectorAll('.nav-list li')[6]);
+      } catch(err) {
+        alert("Gagal menyimpan eviden: "+(err.message || err));
+      } finally { hideLoader(); }
     }
 
+    function populateEvidenceFilters() {
+      const list=evidenceForActiveYear();
+      const stdSelect=document.getElementById('filter-standard');
+      const uploaderSelect=document.getElementById('filter-uploader');
+      const selectedStd=stdSelect.value, selectedUser=uploaderSelect.value;
+      const standards=[...new Set(list.map(x=>String(x.standard||"")).filter(Boolean))].sort();
+      const users=[...new Set(list.map(x=>String(x.pemuatNaik||"")).filter(Boolean))].sort();
+      stdSelect.innerHTML='<option value="">Semua Standard</option>'+standards.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('');
+      uploaderSelect.innerHTML='<option value="">Semua Pemuat Naik</option>'+users.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('');
+      stdSelect.value=standards.includes(selectedStd)?selectedStd:"";
+      uploaderSelect.value=users.includes(selectedUser)?selectedUser:"";
+      populateItemFilter();
+    }
+    function populateItemFilter() {
+      const selectedStd=document.getElementById('filter-standard').value;
+      const select=document.getElementById('filter-item'), prev=select.value;
+      const items=[...new Set(evidenceForActiveYear().filter(x=>!selectedStd || x.standard===selectedStd).map(x=>String(x.noItem||"")).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      select.innerHTML='<option value="">Semua Item</option>'+items.map(x=>'<option value="'+escapeHtml(x)+'">'+escapeHtml(x)+'</option>').join('');
+      select.value=items.includes(prev)?prev:"";
+    }
     function renderEvidenTable() {
       const tbody = document.querySelector('#eviden-master-table tbody');
-      const list = SYSTEM_BUNDLE.eviden || [];
-      tbody.innerHTML = list.map(item => `
-        <tr>
-          <td><b>${item.id}</b><br><small style="color:var(--text-muted);">${item.tahun}</small></td>
-          <td><span style="font-size:0.75rem; font-weight:700; color:var(--primary);">${item.standard}</span><br><b>Item ${item.noItem}</b></td>
+      const list = evidenceForActiveYear();
+      EVIDENCE_ROWS=list;
+      tbody.innerHTML = list.map((item,i) => {
+        const pdca=String(item.pdca||"").split(",").map(x=>x.trim()).filter(Boolean);
+        const link=safeHref(item.pautan);
+        return `<tr data-ev-index="${i}">
+          <td><b>${escapeHtml(item.id)}</b><div class="helper-text">${escapeHtml(item.tahun)}</div></td>
+          <td><span style="font-size:.75rem;font-weight:700;color:var(--primary)">${escapeHtml(item.standard)}</span><br><b>Item ${escapeHtml(item.noItem)}</b></td>
           <td>
-            <a href="${item.pautan}" target="_blank" style="font-weight:700; color:var(--accent-teal); text-decoration:none;">${item.tajuk}</a>
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Jenis: ${item.jenis} | Oleh: ${item.pemuatNaik}</div>
+            <button class="evidence-title" type="button" onclick="showEvidenceDetailFromIndex(${i})">${escapeHtml(item.tajuk)}</button>
+            <div class="helper-text">Aspek: ${escapeHtml(item.aspek || "—")}<br>Jenis: ${escapeHtml(item.jenis)}<br>Oleh: ${escapeHtml(item.pemuatNaik)}</div>
           </td>
-          <td>
-            ${item.pdca.split(',').map(p => `<span style="font-size:0.7rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-right:3px; background:#e0f2f1; color:#004d40;">${p}</span>`).join('')}
+          <td>${pdca.map(p=>'<span style="display:inline-block;padding:3px 6px;margin:2px;background:#e0f2f1;border-radius:4px;font-size:.7rem">'+escapeHtml(p)+'</span>').join("")}</td>
+          <td class="no-print" style="white-space:nowrap">
+            ${link?'<a href="'+escapeHtml(link)+'" target="_blank" rel="noopener noreferrer" title="Buka pautan" class="btn-action-icon"><i class="fa-solid fa-up-right-from-square"></i></a>':""}
+            <button type="button" class="btn-action-icon" title="Lihat perincian" onclick="showEvidenceDetailFromIndex(${i})"><i class="fa-solid fa-eye"></i></button>
+            ${isPrivilegedUser()?'<button type="button" class="btn-action-icon btn-del" title="Padam (Admin sahaja)" onclick="deleteEvidenAtIndex('+i+')"><i class="fa-solid fa-trash"></i></button>':""}
           </td>
-          <td class="no-print">
-            <a href="${item.pautan}" target="_blank" class="btn-login-full" style="padding:6px 10px; width:auto; display:inline-block; font-size:0.75rem;"><i class="fa-solid fa-up-right-from-square"></i></a>
-            ${(CURRENT_USER.role === "ADMIN" || CURRENT_USER.name === item.pemuatNaik) ? `
-              <button onclick="deleteEvidenRecord('${item.id}')" style="background:#ef5350; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
-            ` : ''}
-          </td>
-        </tr>
-      `).join('') || '<tr><td colspan="5">Tiada rekod eviden dijumpai bagi tahun ini.</td></tr>';
+        </tr>`;
+      }).join('') || '<tr><td colspan="5">Tiada rekod eviden dijumpai bagi tahun aktif ini.</td></tr>';
+      populateEvidenceFilters();
+      filterEvidenTable();
     }
-
+    function showEvidenceDetailFromIndex(index) {
+      const r=EVIDENCE_ROWS[index];
+      if (!r) return;
+      const fields=[
+        ["ID / Tahun", String(r.id || "")+" / "+String(r.tahun || "")],
+        ["Standard / No Item", String(r.standard||"")+" / "+String(r.noItem||"")],
+        ["Aspek",r.aspek],["Huraian",r.huraian],["PDCA",r.pdca],
+        ["Jenis Eviden",r.jenis],["Tajuk",r.tajuk],["Catatan",r.catatan],
+        ["Pemuat Naik",r.pemuatNaik]
+      ];
+      const content=fields.map(([label,value])=>'<div style="margin:9px 0"><b>'+escapeHtml(label)+'</b><div style="overflow-wrap:anywhere">'+escapeHtml(value||"—")+'</div></div>').join("");
+      const link=safeHref(r.pautan);
+      openUniversalModal("Perincian Eviden",content+(link?'<a href="'+escapeHtml(link)+'" rel="noopener noreferrer" target="_blank" class="btn-login-full" style="margin-top:15px">Buka Pautan / Fail <i class="fa-solid fa-arrow-up-right-from-square"></i></a>':'<p class="helper-text">Tiada pautan fail yang sah direkodkan.</p>'));
+    }
+    async function deleteEvidenAtIndex(index) {
+      if (!isPrivilegedUser()) return alert("Pemadaman hanya untuk Admin.");
+      const r=EVIDENCE_ROWS[index];
+      if (r) await deleteEvidenRecord(r.id);
+    }
     async function deleteEvidenRecord(id) {
-      if (!confirm("Adakah anda pasti mahu memadam rekod eviden " + id + "?")) return;
+      if (!isPrivilegedUser()) return alert("Pemadaman hanya untuk Admin.");
+      if (!confirm("Padam rekod eviden "+id+"? Semak bahawa ini bukan bukti tunggal bagi item tersebut.")) return;
       showLoader("Memadam rekod...");
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_eviden", id: id }) });
-      await loadAppBundle();
+      try {
+        const response=await fetch(SPES_API_URL,{method:"POST",body:JSON.stringify({action:"delete_eviden",id})});
+        if (!response.ok) throw new Error("HTTP "+response.status);
+        const res=await response.json();
+        if (res.status!=="success") throw new Error(res.message||"Gagal memadam");
+        await loadAppBundle();
+      } catch(err){alert("Gagal memadam: "+(err.message||err));}
+      finally{hideLoader()}
     }
-
     function filterEvidenTable() {
-      const std = document.getElementById('filter-standard').value.toLowerCase();
-      const pdca = document.getElementById('filter-pdca').value.toUpperCase();
-      const search = document.getElementById('filter-search').value.toLowerCase();
-      const rows = document.querySelectorAll('#eviden-master-table tbody tr');
-
-      rows.forEach(r => {
-        const text = r.innerText.toLowerCase();
-        const matchesStd = !std || text.includes(std);
-        const matchesPdca = !pdca || text.includes(pdca);
-        const matchesSearch = !search || text.includes(search);
-        r.style.display = (matchesStd && matchesPdca && matchesSearch) ? '' : 'none';
+      const std=document.getElementById('filter-standard').value;
+      const item=document.getElementById('filter-item').value;
+      const pdca=document.getElementById('filter-pdca').value;
+      const uploader=document.getElementById('filter-uploader').value;
+      const search=normalizeSearch(document.getElementById('filter-search').value);
+      let visible=0;
+      document.querySelectorAll('#eviden-master-table tbody tr[data-ev-index]').forEach(row=>{
+        const r=EVIDENCE_ROWS[Number(row.dataset.evIndex)];
+        const phases=String(r.pdca||"").split(",").map(p=>p.trim().toUpperCase());
+        const haystack=normalizeSearch([r.id,r.tajuk,r.catatan,r.aspek,r.huraian,r.jenis,r.noItem,r.pemuatNaik].join(" "));
+        const matches=(!std||r.standard===std)&&(!item||String(r.noItem)===item)&&(!pdca||phases.includes(pdca))&&(!uploader||r.pemuatNaik===uploader)&&(!search||haystack.includes(search));
+        row.style.display=matches?"":"none";
+        if(matches)visible++;
       });
+      document.getElementById('eviden-visible-count').textContent=visible+" / "+EVIDENCE_ROWS.length+" rekod dipaparkan";
+    }
+    function resetEvidenFilters() {
+      ["filter-standard","filter-item","filter-pdca","filter-uploader","filter-search"].forEach(id=>document.getElementById(id).value="");
+      populateItemFilter(); filterEvidenTable();
+    }
+    function viewEvidenceByStandard(standard) {
+      switchNav("senarai_eviden");
+      document.getElementById("filter-standard").value=standard;
+      populateItemFilter(); filterEvidenTable();
+    }
+    function viewEvidenceByUploader(user) {
+      switchNav("senarai_eviden");
+      document.getElementById("filter-uploader").value=user;
+      filterEvidenTable();
     }
 
     // -------------------------------------------------------------
+    // TETAPAN & PENGGUNA    // -------------------------------------------------------------
     // TETAPAN & PENGGUNA
     // -------------------------------------------------------------
     async function saveSystemSettings() {
+      if (!isPrivilegedUser()) return alert("Tetapan hanya boleh diubah Admin.");
+      const year=Number(document.getElementById('set-tahun').value);
+      if (!Number.isInteger(year) || year<2000 || year>2099) return alert("Tahun penilaian mesti 4 digit antara 2000 dan 2099.");
+      if (!confirm("Semak: tukar tahun aktif boleh mengubah paparan semua pengguna. Teruskan?")) return;
       showLoader("Menyimpan Tetapan...");
       const payload = {
         action: "update_settings",
-        tahun: document.getElementById('set-tahun').value,
+        tahun: year,
         kodSekolah: document.getElementById('set-kod').value,
         namaSekolah: document.getElementById('set-nama').value,
         folderId: document.getElementById('set-folder').value
@@ -1533,25 +1689,95 @@
       if (!tbody || !SYSTEM_BUNDLE || !SYSTEM_BUNDLE.users) return;
       tbody.innerHTML = SYSTEM_BUNDLE.users.map(u => `
         <tr>
-          <td>${u.Email || u.Emel || ''}</td>
-          <td><b>${u.Nama || ''}</b></td>
-          <td><span style="font-size:0.75rem; font-weight:700; background:#e0f2f1; color:#004d40; padding:4px 8px; border-radius:12px;">${u.Peranan || 'USER'}</span></td>
-          <td><span style="font-weight:700; font-size:0.75rem; color:${(u.Status === 'AKTIF' || u.Status === true) ? '#2e7d32' : '#c62828'};">${u.Status || 'AKTIF'}</span></td>
+          <td>${escapeHtml(u.Email || u.Emel || '')}</td>
+          <td><b>${escapeHtml(u.Nama || '')}</b></td>
+          <td><span style="font-size:0.75rem; font-weight:700; background:#e0f2f1; color:#004d40; padding:4px 8px; border-radius:12px;">${escapeHtml(u.Peranan || 'USER')}</span></td>
+          <td><span style="font-weight:700; font-size:0.75rem; color:${(u.Status === 'AKTIF' || u.Status === true) ? '#2e7d32' : '#c62828'};">${escapeHtml(u.Status || 'AKTIF')}</span></td>
         </tr>
       `).join('');
     }
 
-    function switchNav(moduleId, el) {
-      document.querySelectorAll('.nav-list li').forEach(li => li.classList.remove('active'));
-      if (el) el.classList.add('active');
-      document.querySelectorAll('.module-pane').forEach(pane => pane.style.display = 'none');
-      const target = document.getElementById('module-' + moduleId);
-      if (target) target.style.display = 'block';
-    }
 
-    function escapeAttr(s) {
-      if (!s) return "";
-      return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+    function switchNav(moduleId, el) {
+      if(["pengguna","tetapan"].includes(moduleId) && !isPrivilegedUser()) return;
+      document.querySelectorAll('.nav-list li').forEach(li=>li.classList.remove('active'));
+      const targetLi=el||[...document.querySelectorAll('.nav-list li')].find(li=>li.getAttribute('onclick')?.includes("'"+moduleId+"'"));
+      if(targetLi)targetLi.classList.add('active');
+      document.querySelectorAll('.module-pane').forEach(pane=>pane.style.display='none');
+      const target=document.getElementById('module-'+moduleId);
+      if(target)target.style.display='block';
+      closeMobileNav();
+    }
+    function toggleMobileNav(){document.body.classList.toggle('sidebar-open')}
+    function closeMobileNav(){document.body.classList.remove('sidebar-open')}
+    function isPrivilegedUser(){return !!CURRENT_USER && ["ADMIN","SUPER ADMIN"].includes(String(CURRENT_USER.role||"").toUpperCase())}
+    function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+    function escapeAttr(s){return escapeHtml(s).replace(/\n/g," ")}
+    function safeHref(value){try{const url=new URL(String(value||"").trim());return url.protocol==="https:"?url.href:""}catch{return ""}}
+    function normalizeSearch(s){return String(s||"").toLocaleLowerCase("ms").trim()}
+    function evidenceForActiveYear(){
+      if(!SYSTEM_BUNDLE)return [];
+      return (SYSTEM_BUNDLE.eviden||[]).filter(row=>String(row.tahun||SYSTEM_BUNDLE.activeYear)===String(SYSTEM_BUNDLE.activeYear));
+    }
+    function renderCoveragePanel(){
+      const refs=SYSTEM_BUNDLE.standards||[], evidence=evidenceForActiveYear();
+      const stdNames=[...new Set(refs.map(x=>x.Standard).concat(evidence.map(x=>x.standard)).filter(Boolean))];
+      const tbody=document.querySelector("#coverage-table tbody");
+      tbody.innerHTML=stdNames.map((std,i)=>{
+        const items=[...new Set(refs.filter(x=>x.Standard===std).map(x=>String(x["No Item"]||"")).filter(Boolean))];
+        const covered=new Set(evidence.filter(x=>x.standard===std).map(x=>String(x.noItem||"")));
+        const count=items.filter(x=>covered.has(x)).length;
+        const pct=items.length?Math.round(count/items.length*100):0;
+        return '<tr><td><b>'+escapeHtml(std)+'</b></td><td>'+items.length+'</td><td>'+count+'</td><td><div class="coverage-bar"><div class="coverage-fill" style="width:'+pct+'%"></div></div><small>'+ (items.length?pct+"%":"Tiada rujukan item")+'</small></td><td class="no-print"><button type="button" class="btn-action-icon" onclick="viewEvidenceByStandard(AVAILABLE_COVERAGE_STANDARDS['+i+'])">Lihat</button></td></tr>'
+      }).join("")||'<tr><td colspan="5">Tiada data standard tersedia.</td></tr>';
+      AVAILABLE_COVERAGE_STANDARDS=stdNames;
+      const uploader={};
+      evidence.forEach(r=>{const name=String(r.pemuatNaik||"Tanpa nama");uploader[name]=(uploader[name]||0)+1;});
+      const names=Object.keys(uploader).sort((a,b)=>uploader[b]-uploader[a]);
+      document.querySelector("#uploader-report tbody").innerHTML=names.map((name,i)=>'<tr><td>'+escapeHtml(name)+'</td><td>'+uploader[name]+'</td><td class="no-print"><button class="btn-action-icon" type="button" onclick="viewEvidenceByUploader(AVAILABLE_UPLOADERS['+i+'])">Lihat</button></td></tr>').join("")||'<tr><td colspan="3">Tiada eviden bagi tahun aktif.</td></tr>';
+      AVAILABLE_UPLOADERS=names;
+    }
+    let AVAILABLE_COVERAGE_STANDARDS=[];
+    let AVAILABLE_UPLOADERS=[];
+    // Direktori ini menyalin label struktur ZIP; ia BUKAN item rasmi atau pautan Drive.
+    const FOLDER_CATALOG=[
+      ["00_PENGURUSAN SK@S",["01_Panduan & Instrumen SK@S","02_Surat & Pekeliling","03_Jawatankuasa SK@S","04_Takwim","05_Mesyuarat","06_Pemantauan","07_Tindakan Susulan"]],
+      ["01_STANDARD 1_KEPEMIMPINAN",["1.1_PGB Sebagai Peneraju","1.2_PGB Sebagai Pembimbing","Evidens"]],
+      ["02_STANDARD 2_PENGURUSAN ORGANISASI",["2.1_Pengurusan Sumber Manusia","2.2_Pengurusan Aset","2.3_Pengurusan Kewangan","2.4_Pengurusan Sumber Pendidikan","2.5_Pengurusan Iklim","2.6_Pengurusan Perpaduan","Evidens"]],
+      ["03_STANDARD 3.1_KURIKULUM",["3.1.1_Ketetapan Pelaksanaan Kurikulum","3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu","3.1.2_Pengurusan Mata Pelajaran/Bahasa Inggeris","3.1.2_Pengurusan Mata Pelajaran/Matematik","3.1.2_Pengurusan Mata Pelajaran/Sains","3.1.2_Pengurusan Mata Pelajaran/Sejarah","3.1.2_Pengurusan Mata Pelajaran/Pendidikan Islam","3.1.2_Pengurusan Mata Pelajaran/Pendidikan Moral","3.1.2_Pengurusan Mata Pelajaran/RBT","3.1.2_Pengurusan Mata Pelajaran/ASK","3.1.2_Pengurusan Mata Pelajaran/Mata Pelajaran Lain","Evidens"]],
+      ["04_STANDARD 3.2_KOKURIKULUM",["3.2.1_Kelab & Persatuan","3.2.2_Unit Beruniform","3.2.3_Sukan & Permainan","3.2.4_Penyertaan & Pencapaian","PAJSK","Evidens"]],
+      ["05_STANDARD 3.3_HEM",["3.3.1_Kehadiran","3.3.2_Disiplin","3.3.3_Kebajikan","3.3.4_Bimbingan & Kaunseling","3.3.5_Kesihatan","3.3.6_SPBT","3.3.7_Keselamatan","Evidens"]],
+      ["06_STANDARD 4_PENGAJARAN & PEMBELAJARAN",["4.1_Perancangan PdP","4.2_Pelaksanaan PdP","4.3_Pentaksiran","4.4_Pembelajaran Murid","4.5_Pencerapan","Evidens"]],
+      ["07_STANDARD 5_KEMENJADIAN & PENCAPAIAN",["5.1_Kemenjadian Murid","5.2_Pencapaian Murid","5.3_Pencapaian Guru","5.4_Pencapaian Sekolah","Evidens"]],
+      ["08_PROGRAM & INTERVENSI SEKOLAH",["Akademik","HEM","Kokurikulum","Pembangunan Guru","Intervensi Murid","Laporan Program"]],
+      ["09_ANALISIS & DATA",["Akademik","Peperiksaan","PBD","Kokurikulum","Disiplin","Kehadiran","Analisis SK@S"]],
+      ["10_DOKUMENTASI EVIDENS",["01_Kertas Kerja","02_Minit Mesyuarat","03_Surat","04_Laporan","05_Gambar","06_Sijil","07_Evidens Tambahan"]],
+      ["11_PEMANTAUAN & PENAMBAHBAIKAN",["Instrumen Pemantauan","Dapatan","Analisis","Pelan Intervensi","Tindakan Susulan","Laporan Penambahbaikan"]]
+    ];
+    function folderPath(index,childIndex){
+      const entry=FOLDER_CATALOG[index];
+      return entry?["SKAS_MASTER_FOLDER_2026",entry[0],...(childIndex>=0?[entry[1][childIndex]]:[])].filter(Boolean).join("/"):"";
+    }
+    function renderFolderCatalog(){
+      const node=document.getElementById("folder-catalog");
+      node.innerHTML=FOLDER_CATALOG.map(([name,children],i)=>'<details class="folder-group"><summary>'+escapeHtml(name)+' <small>('+children.length+' laluan)</small></summary><div class="folder-list">'+children.map((child,j)=>'<div class="folder-path"><span>'+escapeHtml(child)+'</span><button type="button" title="Salin laluan" onclick="copyFolderPath('+i+','+j+')"><i class="fa-solid fa-copy"></i></button></div>').join("")+'</div></details>').join("");
+      filterFolders();
+    }
+    function filterFolders(){
+      const q=normalizeSearch(document.getElementById("folder-search").value);
+      let shown=0;
+      document.querySelectorAll("#folder-catalog details").forEach((node,i)=>{
+        const category=FOLDER_CATALOG[i],full=normalizeSearch(category.join(" "));
+        node.hidden=!!q&&!full.includes(q);
+        if(!node.hidden){shown++;if(q)node.open=true}
+        if(!q)node.open=false;
+      });
+      document.getElementById("folder-count").textContent=shown+" / "+FOLDER_CATALOG.length+" kategori daripada arkib ZIP asal";
+    }
+    async function copyFolderPath(i,j){
+      const path=folderPath(i,j);
+      try{if(!navigator.clipboard)throw Error("clipboard tiada");await navigator.clipboard.writeText(path)}
+      catch{prompt("Salin laluan folder:",path)}
     }
   </script>
 </body>
