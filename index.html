@@ -887,16 +887,16 @@
 
       container.innerHTML = Object.keys(levels).sort().map(lvl => `
         <div style="margin-bottom:25px;">
-          <div class="jk-level-badge">PERINGKAT / LEVEL ${lvl}</div>
+          <div class="jk-level-badge">PERINGKAT / LEVEL ${escapeHtml(lvl)}</div>
           <div style="display:flex; justify-content:center; gap:20px; margin-top:10px; flex-wrap:wrap;">
             ${levels[lvl].map(m => `
               <div class="jk-card">
-                <div class="jk-jawatan">${m.Jawatan}</div>
-                <div class="jk-nama">${m['Nama Penuh']}</div>
+                <div class="jk-jawatan">${escapeHtml(m.Jawatan)}</div>
+                <div class="jk-nama">${escapeHtml(m['Nama Penuh'])}</div>
                 ${isAdmin ? `
                   <div class="jk-actions no-print">
-                    <button class="btn-action-icon" title="Kemas Kini" onclick="openEditJawatankuasaModal(${m._row}, '${escapeAttr(m.Bilangan)}', '${escapeAttr(m.Jawatan)}', '${escapeAttr(m['Nama Penuh'])}', '${escapeAttr(m['Level Carta'])}')"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action-icon btn-del" title="Padam" onclick="deleteJawatankuasaRow(${m._row}, '${escapeAttr(m['Nama Penuh'])}')"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-action-icon" title="Kemas Kini" onclick="editJawatankuasaAt(${Number(m._row)})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action-icon btn-del" title="Padam" onclick="deleteJawatankuasaRow(${Number(m._row)}, 'ahli ini')"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 ` : ''}
               </div>
@@ -938,14 +938,14 @@
       const usersOpt = (SYSTEM_BUNDLE.users || []).map(u => `<option value="${escapeAttr(u.Nama)}">${escapeAttr(u.Nama)}</option>`).join('');
       const html = `
         <form onsubmit="submitUpdateJawatankuasa(event, ${row})">
-          <input type="hidden" id="jk-edit-bil" value="${bil}">
+          <input type="hidden" id="jk-edit-bil" value="${escapeHtml(bil)}">
           <div class="form-group">
             <label>Jawatan *</label>
-            <input type="text" id="jk-edit-jawatan" class="form-control" value="${jawatan}" required>
+            <input type="text" id="jk-edit-jawatan" class="form-control" value="${escapeHtml(jawatan)}" required>
           </div>
           <div class="form-group">
             <label>Nama Penuh *</label>
-            <input type="text" id="jk-edit-nama" class="form-control" list="teachers-datalist" value="${nama}" required>
+            <input type="text" id="jk-edit-nama" class="form-control" list="teachers-datalist" value="${escapeHtml(nama)}" required>
             <datalist id="teachers-datalist">${usersOpt}</datalist>
           </div>
           <div class="form-group">
@@ -964,6 +964,7 @@
     }
 
     async function submitSaveJawatankuasa(e) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Menyimpan Ahli JK...");
       const payload = {
@@ -978,6 +979,7 @@
     }
 
     async function submitUpdateJawatankuasa(e, row) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Mengemas kini Ahli JK...");
       const payload = {
@@ -994,6 +996,7 @@
     }
 
     async function deleteJawatankuasaRow(row, nama) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam ahli jawatankuasa "${nama}"?`)) return;
       showLoader("Memadam Ahli JK...");
       await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_jawatankuasa", row: row }) });
@@ -1010,14 +1013,14 @@
 
       tbody.innerHTML = list.map(s => `
         <tr>
-          <td><span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:700; background:#e0f2f1; color:#004d40; font-size:0.75rem;">${s.Standard}</span></td>
-          <td><b>${s['No Item']}</b></td>
-          <td><b>${s.Aspek}</b></td>
-          <td style="font-size:0.85rem; color:#475569;">${s.Huraian}</td>
+          <td><span style="display:inline-block; padding:4px 8px; border-radius:4px; font-weight:700; background:#e0f2f1; color:#004d40; font-size:0.75rem;">${escapeHtml(s.Standard)}</span></td>
+          <td><b>${escapeHtml(s['No Item'])}</b></td>
+          <td><b>${escapeHtml(s.Aspek)}</b></td>
+          <td style="font-size:0.85rem; color:#475569;">${escapeHtml(s.Huraian)}</td>
           ${isAdmin ? `
             <td class="admin-only no-print" style="white-space:nowrap;">
-              <button class="btn-action-icon" title="Kemas Kini" onclick="openEditStandardModal(${s._row}, '${escapeAttr(s.Standard)}', '${escapeAttr(s['No Item'])}', '${escapeAttr(s.Aspek)}', '${escapeAttr(s.Huraian)}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-action-icon btn-del" title="Padam" onclick="deleteStandardRow(${s._row}, '${escapeAttr(s['No Item'])}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn-action-icon" title="Kemas Kini" onclick="editStandardAt(${Number(s._row)})"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn-action-icon btn-del" title="Padam" onclick="deleteStandardRow(${Number(s._row)}, 'item ini')"><i class="fa-solid fa-trash"></i></button>
             </td>
           ` : ''}
         </tr>
@@ -1075,19 +1078,19 @@
         <form onsubmit="submitUpdateStandard(event, ${row})">
           <div class="form-group">
             <label>Standard *</label>
-            <input type="text" id="std-edit-name" class="form-control" value="${std}" required>
+            <input type="text" id="std-edit-name" class="form-control" value="${escapeHtml(std)}" required>
           </div>
           <div class="form-group">
             <label>No Item *</label>
-            <input type="text" id="std-edit-item" class="form-control" value="${item}" required>
+            <input type="text" id="std-edit-item" class="form-control" value="${escapeHtml(item)}" required>
           </div>
           <div class="form-group">
             <label>Aspek *</label>
-            <input type="text" id="std-edit-aspek" class="form-control" value="${asp}" required>
+            <input type="text" id="std-edit-aspek" class="form-control" value="${escapeHtml(asp)}" required>
           </div>
           <div class="form-group">
             <label>Huraian *</label>
-            <textarea id="std-edit-huraian" class="form-control" required>${hur}</textarea>
+            <textarea id="std-edit-huraian" class="form-control" required>${escapeHtml(hur)}</textarea>
           </div>
           <button type="submit" class="btn-login-full" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Kemas Kini Standard</button>
         </form>
@@ -1096,6 +1099,7 @@
     }
 
     async function submitSaveStandard(e) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Menyimpan Standard...");
       const payload = {
@@ -1111,6 +1115,7 @@
     }
 
     async function submitUpdateStandard(e, row) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Mengemas kini Standard...");
       const payload = {
@@ -1127,6 +1132,7 @@
     }
 
     async function deleteStandardRow(row, item) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam item standard "${item}"?`)) return;
       showLoader("Memadam Item Standard...");
       await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_standard", row: row }) });
@@ -1156,14 +1162,14 @@
       // 3. Render Jadual
       tbody.innerHTML = list.map(p => `
         <tr>
-          <td><span style="font-size:0.75rem; font-weight:700; color:var(--primary);">${p.Standard}</span></td>
-          <td><b>${p.Aspek}</b></td>
-          <td><b style="color:#0f766e;">${p['Nama Guru']}</b></td>
-          <td><span style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; ${p.Peranan === 'Ketua' ? 'background:#ffebee; color:#c62828;' : 'background:#e0f2f1; color:#004d40;'}">${p.Peranan}</span></td>
+          <td><span style="font-size:0.75rem; font-weight:700; color:var(--primary);">${escapeHtml(p.Standard)}</span></td>
+          <td><b>${escapeHtml(p.Aspek)}</b></td>
+          <td><b style="color:#0f766e;">${escapeHtml(p['Nama Guru'])}</b></td>
+          <td><span style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; ${p.Peranan === 'Ketua' ? 'background:#ffebee; color:#c62828;' : 'background:#e0f2f1; color:#004d40;'}">${escapeHtml(p.Peranan)}</span></td>
           ${isAdmin ? `
             <td class="admin-only no-print" style="white-space:nowrap;">
-              <button class="btn-action-icon" title="Kemas Kini" onclick="openEditPPSModal(${p._row}, '${escapeAttr(p.Standard)}', '${escapeAttr(p.Aspek)}', '${escapeAttr(p['Nama Guru'])}', '${escapeAttr(p.Peranan)}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-action-icon btn-del" title="Padam" onclick="deletePPSRow(${p._row}, '${escapeAttr(p['Nama Guru'])}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn-action-icon" title="Kemas Kini" onclick="editPPSAt(${Number(p._row)})"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn-action-icon btn-del" title="Padam" onclick="deletePPSRow(${Number(p._row)}, 'lantikan ini')"><i class="fa-solid fa-trash"></i></button>
             </td>
           ` : ''}
         </tr>
@@ -1179,6 +1185,7 @@
     }
 
     async function submitAddPPS() {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       const standard = document.getElementById('add-pps-standard').value;
       const aspek = document.getElementById('add-pps-aspek').value;
       const namaGuru = document.getElementById('add-pps-guru').value;
@@ -1200,11 +1207,11 @@
         <form onsubmit="submitUpdatePPS(event, ${row})">
           <div class="form-group">
             <label>Standard *</label>
-            <input type="text" id="pps-edit-std" class="form-control" value="${std}" required>
+            <input type="text" id="pps-edit-std" class="form-control" value="${escapeHtml(std)}" required>
           </div>
           <div class="form-group">
             <label>Aspek *</label>
-            <input type="text" id="pps-edit-asp" class="form-control" value="${asp}" required>
+            <input type="text" id="pps-edit-asp" class="form-control" value="${escapeHtml(asp)}" required>
           </div>
           <div class="form-group">
             <label>Nama Guru *</label>
@@ -1224,6 +1231,7 @@
     }
 
     async function submitUpdatePPS(e, row) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Mengemas kini Ahli PPS...");
       const payload = {
@@ -1240,6 +1248,7 @@
     }
 
     async function deletePPSRow(row, guru) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam lantikan PPS untuk "${guru}"?`)) return;
       showLoader("Memadam Ahli PPS...");
       await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_pps", row: row }) });
@@ -1278,15 +1287,15 @@
 
       tbody.innerHTML = list.map(c => `
         <tr>
-          <td><b>${c.Bilangan}</b></td>
-          <td><span style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; ${c.Status === 'LENGKAP' ? 'background:#e8f5e9; color:#2e7d32;' : 'background:#ffebee; color:#c62828;'}">${c.Status}</span></td>
-          <td><b>${c.Perkara}</b></td>
-          <td>${c.PIC}</td>
-          <td>${c.Catatan || '—'}</td>
+          <td><b>${escapeHtml(c.Bilangan)}</b></td>
+          <td><span style="padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; ${c.Status === 'LENGKAP' ? 'background:#e8f5e9; color:#2e7d32;' : 'background:#ffebee; color:#c62828;'}">${escapeHtml(c.Status)}</span></td>
+          <td><b>${escapeHtml(c.Perkara)}</b></td>
+          <td>${escapeHtml(c.PIC)}</td>
+          <td>${escapeHtml(c.Catatan || '—')}</td>
           ${isAdmin ? `
             <td class="admin-only no-print" style="white-space:nowrap;">
-              <button class="btn-action-icon" title="Kemas Kini" onclick="openEditChecklistModal(${c._row}, '${escapeAttr(c.Bilangan)}', '${escapeAttr(c.Status)}', '${escapeAttr(c.Perkara)}', '${escapeAttr(c.PIC)}', '${escapeAttr(c.Catatan)}')"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-action-icon btn-del" title="Padam" onclick="deleteChecklistRow(${c._row}, '${escapeAttr(c.Perkara)}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn-action-icon" title="Kemas Kini" onclick="editChecklistAt(${Number(c._row)})"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn-action-icon btn-del" title="Padam" onclick="deleteChecklistRow(${Number(c._row)}, 'tindakan ini')"><i class="fa-solid fa-trash"></i></button>
             </td>
           ` : ''}
         </tr>
@@ -1330,7 +1339,7 @@
         <form onsubmit="submitUpdateChecklist(event, ${row})">
           <div class="form-group">
             <label>Bilangan *</label>
-            <input type="text" id="chk-edit-bil" class="form-control" value="${bil}" required>
+            <input type="text" id="chk-edit-bil" class="form-control" value="${escapeHtml(bil)}" required>
           </div>
           <div class="form-group">
             <label>Status *</label>
@@ -1341,15 +1350,15 @@
           </div>
           <div class="form-group">
             <label>Perkara / Tindakan *</label>
-            <textarea id="chk-edit-perkara" class="form-control" required>${perkara}</textarea>
+            <textarea id="chk-edit-perkara" class="form-control" required>${escapeHtml(perkara)}</textarea>
           </div>
           <div class="form-group">
             <label>PIC *</label>
-            <input type="text" id="chk-edit-pic" class="form-control" value="${pic}" required>
+            <input type="text" id="chk-edit-pic" class="form-control" value="${escapeHtml(pic)}" required>
           </div>
           <div class="form-group">
             <label>Catatan</label>
-            <input type="text" id="chk-edit-catatan" class="form-control" value="${catatan}">
+            <input type="text" id="chk-edit-catatan" class="form-control" value="${escapeHtml(catatan)}">
           </div>
           <button type="submit" class="btn-login-full" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Kemas Kini Tindakan</button>
         </form>
@@ -1358,6 +1367,7 @@
     }
 
     async function submitSaveChecklist(e) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Menyimpan Tindakan...");
       const payload = {
@@ -1374,6 +1384,7 @@
     }
 
     async function submitUpdateChecklist(e, row) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
       showLoader("Mengemas kini Tindakan...");
       const payload = {
@@ -1391,6 +1402,7 @@
     }
 
     async function deleteChecklistRow(row, perkara) {
+      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam tindakan "${perkara}"?`)) return;
       showLoader("Memadam Tindakan...");
       await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_checklist", row: row }) });
@@ -1698,6 +1710,27 @@
     }
 
 
+    // Resolve edit actions by row instead of injecting untrusted text into onclick attributes.
+    function editJawatankuasaAt(row) {
+      if (!isPrivilegedUser()) return;
+      const x=(SYSTEM_BUNDLE.jawatankuasa||[]).find(v=>Number(v._row)===row);
+      if (x) openEditJawatankuasaModal(row,x.Bilangan,x.Jawatan,x["Nama Penuh"],String(x["Level Carta"]||"1"));
+    }
+    function editStandardAt(row) {
+      if (!isPrivilegedUser()) return;
+      const x=(SYSTEM_BUNDLE.standards||[]).find(v=>Number(v._row)===row);
+      if (x) openEditStandardModal(row,x.Standard,x["No Item"],x.Aspek,x.Huraian);
+    }
+    function editPPSAt(row) {
+      if (!isPrivilegedUser()) return;
+      const x=(SYSTEM_BUNDLE.pps||[]).find(v=>Number(v._row)===row);
+      if (x) openEditPPSModal(row,x.Standard,x.Aspek,x["Nama Guru"],x.Peranan);
+    }
+    function editChecklistAt(row) {
+      if (!isPrivilegedUser()) return;
+      const x=(SYSTEM_BUNDLE.checklist||[]).find(v=>Number(v._row)===row);
+      if (x) openEditChecklistModal(row,x.Bilangan,x.Status,x.Perkara,x.PIC,x.Catatan);
+    }
     function switchNav(moduleId, el) {
       if(["pengguna","tetapan"].includes(moduleId) && !isPrivilegedUser()) return;
       document.querySelectorAll('.nav-list li').forEach(li=>li.classList.remove('active'));
