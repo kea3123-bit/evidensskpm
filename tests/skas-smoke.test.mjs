@@ -116,5 +116,5 @@ test("evidence upload can share viewer link with private override; legacy repair
  assert.match(html,/function repairOldEvidenceAccess\(/);
  assert.match(html,/action:"repair_evidence_access"/);
  assert.match(html,/class="btn-login-full admin-only" onclick="repairOldEvidenceAccess\(\)"/);
- assert.match(html,/Sesiapa yang mempunyai pautan/);
+ assert.match(html,/sesiapa yang mempunyai pautan/i);
 });
