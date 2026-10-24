@@ -703,6 +703,41 @@
     let CURRENT_USER = null;
     let SYSTEM_BUNDLE = null;
     let loginEmail = "";
+    let SPES_AUTH_TOKEN = "";
+    let SECURE_BACKEND = false;
+    async function spesFetch(url,opts) {
+      // Supply session token to every backend action; never send a raw PIN after login.
+      const original=opts||{};
+      let next=original;
+      if (SPES_AUTH_TOKEN && typeof original.body==="string") {
+        const payload=JSON.parse(original.body);
+        payload.authToken=SPES_AUTH_TOKEN;
+        next=Object.assign({},original,{body:JSON.stringify(payload)});
+      }
+      return fetch(url,next);
+    }
+    async function establishBackendSession(email,pin) {
+      const response=await fetch(SPES_API_URL,{
+        method:"POST",body:JSON.stringify({action:"auth_login",email:email,pin:pin})
+      });
+      if (!response.ok) throw new Error("Backend SK@S HTTP "+response.status);
+      const data=await response.json();
+      if (data.status==="success" && data.authToken && data.user) {
+        if(String(data.user.email||"").toLowerCase()!==String(email).toLowerCase())throw new Error("Identiti antara sistem tidak sepadan.");
+        SPES_AUTH_TOKEN=data.authToken;
+        SECURE_BACKEND=true;
+        CURRENT_USER={email:data.user.email,name:data.user.name,role:data.user.role};
+        return;
+      }
+      // Legacy v2 backend does not support auth_login. Allow staged deployment
+      // until Apps Script v3 is deployed by the school.
+      if (data.status==="error" && !data.code && data.message==="Tindakan tidak sah.") {
+        SPES_AUTH_TOKEN="";
+        SECURE_BACKEND=false;
+        return;
+      }
+      throw new Error("Sesi backend gagal: "+(data.message||"Semak konfigurasi Apps Script v3."));
+    }
     let EVIDENCE_ROWS = [];
     let LAST_DATA_ERROR = "";
 
@@ -796,6 +831,8 @@
             name: authBoot.user.name,
             role: authBoot.user.isAdmin ? "ADMIN" : "USER"
           };
+          await establishBackendSession(loginEmail,pin);
+          document.getElementById('loginPin').value="";
           if (!await loadAppBundle()) throw new Error(LAST_DATA_ERROR || "Data SK@S tidak dapat dimuatkan.");
           document.getElementById('loginPage').classList.add('hidden');
           document.getElementById('app-view').style.display = "flex";
@@ -810,7 +847,13 @@
     }
 
     function logout() {
+      if (SPES_AUTH_TOKEN) {
+        spesFetch(SPES_API_URL,{method:"POST",body:JSON.stringify({action:"auth_logout"})}).catch(()=>{});
+      }
+      SPES_AUTH_TOKEN="";
+      SECURE_BACKEND=false;
       CURRENT_USER = null;
+      SYSTEM_BUNDLE = null;
       document.getElementById('app-view').style.display = "none";
       document.getElementById('loginPage').style.display = "flex";
       document.getElementById('loginPage').classList.remove('hidden');
@@ -823,7 +866,7 @@
       LAST_DATA_ERROR = "";
       try {
         // Tahun aktif ditentukan oleh SETTING pada backend, bukan nilai 2026 yang dikunci.
-        const resp = await fetch(SPES_API_URL, {
+        const resp = await spesFetch(SPES_API_URL, {
           method: "POST",
           body: JSON.stringify({ action: "get_bundle" })
         });
@@ -988,7 +1031,7 @@
         nama: document.getElementById('jk-nama').value.trim(),
         level: document.getElementById('jk-level').value
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1005,7 +1048,7 @@
         nama: document.getElementById('jk-edit-nama').value.trim(),
         level: document.getElementById('jk-edit-level').value
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1014,7 +1057,7 @@
       if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam ahli jawatankuasa "${nama}"?`)) return;
       showLoader("Memadam Ahli JK...");
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_jawatankuasa", row: row }) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_jawatankuasa", row: row }) });
       await loadAppBundle();
     }
 
@@ -1124,7 +1167,7 @@
         aspek: document.getElementById('std-add-aspek').value.trim(),
         huraian: document.getElementById('std-add-huraian').value.trim()
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1141,7 +1184,7 @@
         aspek: document.getElementById('std-edit-aspek').value.trim(),
         huraian: document.getElementById('std-edit-huraian').value.trim()
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1150,7 +1193,7 @@
       if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam item standard "${item}"?`)) return;
       showLoader("Memadam Item Standard...");
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_standard", row: row }) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_standard", row: row }) });
       await loadAppBundle();
     }
 
@@ -1212,7 +1255,7 @@
 
       showLoader("Menyimpan Ahli PPS...");
       const payload = { action: "save_pps", standard, aspek, namaGuru, peranan };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       await loadAppBundle();
     }
 
@@ -1257,7 +1300,7 @@
         namaGuru: document.getElementById('pps-edit-guru').value,
         peranan: document.getElementById('pps-edit-peranan').value
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1266,7 +1309,7 @@
       if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam lantikan PPS untuk "${guru}"?`)) return;
       showLoader("Memadam Ahli PPS...");
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_pps", row: row }) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_pps", row: row }) });
       await loadAppBundle();
     }
 
@@ -1393,7 +1436,7 @@
         pic: document.getElementById('chk-add-pic').value.trim(),
         catatan: document.getElementById('chk-add-catatan').value.trim()
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1411,7 +1454,7 @@
         pic: document.getElementById('chk-edit-pic').value.trim(),
         catatan: document.getElementById('chk-edit-catatan').value.trim()
       };
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
       closeUniversalModal();
       await loadAppBundle();
     }
@@ -1420,7 +1463,7 @@
       if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       if (!confirm(`Padam tindakan "${perkara}"?`)) return;
       showLoader("Memadam Tindakan...");
-      await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_checklist", row: row }) });
+      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_checklist", row: row }) });
       await loadAppBundle();
     }
 
@@ -1546,7 +1589,7 @@
             reader.readAsDataURL(file);
           });
         }
-        const response = await fetch(SPES_API_URL, {
+        const response = await spesFetch(SPES_API_URL, {
           method: "POST",
           body: JSON.stringify({
             action:"save_eviden", tahun:SYSTEM_BUNDLE.activeYear, pemuatNaik:CURRENT_USER.name,
@@ -1606,6 +1649,7 @@
           <td class="no-print" style="white-space:nowrap">
             ${link?'<a href="'+escapeHtml(link)+'" target="_blank" rel="noopener noreferrer" title="Buka pautan" class="btn-action-icon"><i class="fa-solid fa-up-right-from-square"></i></a>':""}
             <button type="button" class="btn-action-icon" title="Lihat perincian" onclick="showEvidenceDetailFromIndex(${i})"><i class="fa-solid fa-eye"></i></button>
+            ${SECURE_BACKEND && (isPrivilegedUser() || String(item.pemuatNaik||"").trim()===String(CURRENT_USER.name||"").trim())?'<button type="button" class="btn-action-icon" title="Kemas kini eviden" onclick="editEvidenceAtIndex('+i+')"><i class="fa-solid fa-pen"></i></button>':""}
             ${isPrivilegedUser()?'<button type="button" class="btn-action-icon btn-del" title="Padam (Admin sahaja)" onclick="deleteEvidenAtIndex('+i+')"><i class="fa-solid fa-trash"></i></button>':""}
           </td>
         </tr>`;
@@ -1627,6 +1671,50 @@
       const link=safeHref(r.pautan);
       openUniversalModal("Perincian Eviden",content+(link?'<a href="'+escapeHtml(link)+'" rel="noopener noreferrer" target="_blank" class="btn-login-full" style="margin-top:15px">Buka Pautan / Fail <i class="fa-solid fa-arrow-up-right-from-square"></i></a>':'<p class="helper-text">Tiada pautan fail yang sah direkodkan.</p>'));
     }
+    function editEvidenceAtIndex(index) {
+      if (!SECURE_BACKEND) return alert("Kemas kini eviden memerlukan backend Apps Script v3.");
+      const r=EVIDENCE_ROWS[index];
+      if (!r) return;
+      if(!isPrivilegedUser() && String(r.pemuatNaik||"").trim()!==String(CURRENT_USER.name||"").trim()){
+        return alert("Hanya eviden sendiri boleh dikemas kini.");
+      }
+      const phases=String(r.pdca||"").split(",").map(x=>x.trim());
+      const selectors=["PLAN","DO","CHECK","ACTION"].map(p=>'<label style="display:inline-flex;align-items:center;gap:4px;margin:5px 12px 5px 0"><input type="checkbox" name="edit-evidence-pdca" value="'+p+'" '+(phases.includes(p)?"checked":"")+'> '+p+'</label>').join("");
+      const html='<form onsubmit="saveEditedEvidence(event,'+index+')">'+
+        '<div class="helper-text">ID '+escapeHtml(r.id)+' — Item '+escapeHtml(r.noItem)+'</div>'+
+        '<div class="form-group"><label>Tajuk Eviden *</label><input id="edit-evidence-title" class="form-control" required value="'+escapeHtml(r.tajuk)+'"></div>'+
+        '<div class="form-group"><label>Catatan</label><textarea id="edit-evidence-note" class="form-control">'+escapeHtml(r.catatan||"")+'</textarea></div>'+
+        '<div class="form-group"><label>Jenis Eviden *</label><input id="edit-evidence-type" class="form-control" required value="'+escapeHtml(r.jenis)+'"></div>'+
+        '<div class="form-group"><label>Fasa PDCA *</label><div>'+selectors+'</div></div>'+
+        '<div class="form-group"><label>Pautan HTTPS</label><input id="edit-evidence-link" type="url" class="form-control" value="'+escapeHtml(r.pautan||"")+'"></div>'+
+        '<p class="helper-text">Penukaran fail fizikal tidak disokong dalam borang ini. Pautan sedia ada boleh dikemas kini.</p>'+
+        '<button type="submit" class="btn-login-full">Simpan Perubahan</button></form>';
+      openUniversalModal("Kemas Kini Eviden",html);
+    }
+    async function saveEditedEvidence(ev,index) {
+      ev.preventDefault();
+      const r=EVIDENCE_ROWS[index];
+      if (!r || !SPES_AUTH_TOKEN) return alert("Sesi backend diperlukan.");
+      const pdca=[...document.querySelectorAll('input[name="edit-evidence-pdca"]:checked')].map(x=>x.value).join(",");
+      const tajuk=document.getElementById("edit-evidence-title").value.trim();
+      const jenis=document.getElementById("edit-evidence-type").value.trim();
+      const catatan=document.getElementById("edit-evidence-note").value.trim();
+      const pautanLuar=document.getElementById("edit-evidence-link").value.trim();
+      if(!pdca || !tajuk || !jenis)return alert("Tajuk, jenis eviden dan PDCA wajib diisi.");
+      if(pautanLuar && !safeHref(pautanLuar))return alert("Pautan mesti menggunakan HTTPS.");
+      showLoader("Mengemas kini eviden...");
+      try{
+        const response=await spesFetch(SPES_API_URL,{method:"POST",body:JSON.stringify({
+          action:"update_eviden",id:r.id,tajuk,jenis,catatan,pdca,pautanLuar
+        })});
+        const result=await response.json();
+        if(result.status!=="success")throw new Error(result.message||"Tidak berjaya.");
+        closeUniversalModal();
+        await loadAppBundle();
+      }catch(e){alert("Gagal kemas kini eviden: "+(e.message||e));}
+      finally{hideLoader();}
+    }
+
     async function deleteEvidenAtIndex(index) {
       if (!isPrivilegedUser()) return alert("Pemadaman hanya untuk Admin.");
       const r=EVIDENCE_ROWS[index];
@@ -1696,7 +1784,7 @@
       };
 
       try {
-        const resp = await fetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const resp = await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
         const res = await resp.json();
         if (res.status === "success") {
           alert("Tetapan Sistem Berjaya Disimpan ke PengurusanEvidensSK@S!");
