@@ -354,9 +354,12 @@ function standardFolderHeaders_(sh) {
   if (String(sh.getRange(1, 6).getValue()).trim() !== "Folder URL") {
     sh.getRange(1, 6).setValue("Folder URL");
   }
+  if (String(sh.getRange(1, 7).getValue()).trim() !== "ZIP Path") {
+    sh.getRange(1, 7).setValue("ZIP Path");
+  }
 }
-function standardKey_(standard, item) {
-  return String(standard || "").trim().toLowerCase() + "|" + String(item || "").trim();
+function standardKey_(standard, item, aspect) {
+  return [standard,item,aspect].map(function(x){return String(x||"").trim().toLowerCase();}).join("|");
 }
 function validStandardInput_(p) {
   var values = ["standard", "noItem", "aspek", "huraian"];
@@ -380,6 +383,7 @@ function getOrCreateChildFolder_(parent, name) {
   return matches.hasNext() ? matches.next() : parent.createFolder(name);
 }
 function standardFolderInfo_(ss, p) {
+  if(p.zipPath)return createZipPathFolder_(ss,String(p.zipPath));
   var settings = getSettings_(ss);
   var rootId = String(settings["FOLDER DRIVE EVIDEN"] || settings["FOLDER DRIVE"] || "").trim();
   if (!rootId || rootId === "ROOT") {
@@ -394,9 +398,9 @@ function standardFolderInfo_(ss, p) {
 }
 function duplicateStandard_(sh, p, exceptRow) {
   var list=sh.getDataRange().getValues();
-  var key=standardKey_(p.standard,p.noItem);
+  var key=standardKey_(p.standard,p.noItem,p.aspek);
   return list.some(function(row,i){
-    return i>0 && i+1!==exceptRow && standardKey_(row[0],row[1])===key;
+    return i>0 && i+1!==exceptRow && standardKey_(row[0],row[1],row[2])===key;
   });
 }
 function standardUsedInEviden_(ss, standard, noItem) {
@@ -414,10 +418,10 @@ function saveStandard(ss, p) {
   var lock=LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (duplicateStandard_(sh,p,0)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
+    if (duplicateStandard_(sh,p,0)) return {status:"error",message:"No Item dan Aspek ini sudah wujud dalam Standard yang sama."};
     // Ensure Drive hierarchy exists before committing a reference to Sheets.
     var folder=standardFolderInfo_(ss,p);
-    sh.appendRow([safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url]);
+    sh.appendRow([safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url,""]);
     return {status:"success",folderUrl:folder.url};
   } finally {lock.releaseLock();}
 }
@@ -430,18 +434,21 @@ function updateStandard(ss,p) {
   var lock=LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (duplicateStandard_(sh,p,row)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
-    var old=sh.getRange(row,1,1,6).getValues()[0];
+    if (duplicateStandard_(sh,p,row)) return {status:"error",message:"No Item dan Aspek ini sudah wujud dalam Standard yang sama."};
+    var old=sh.getRange(row,1,1,7).getValues()[0];
     var changed=String(old[0])!==String(p.standard) ||
       String(old[1])!==String(p.noItem) ||
       String(old[2])!==String(p.aspek);
+    if(changed && old[6]){
+      return {status:"error",message:"Item rujukan ZIP: kod/standard/aspek dikunci supaya laluan folder asal kekal. Huraian boleh dikemas kini."};
+    }
     if (changed && standardUsedInEviden_(ss,old[0],old[1])) {
       return {status:"error",message:"Standard/No Item mempunyai eviden. Ubah Huraian sahaja atau pindahkan eviden sebelum menukar kod."};
     }
     var folder = changed || !old[4] || !old[5] ?
-      standardFolderInfo_(ss,p) : {id:old[4],url:old[5]};
-    sh.getRange(row,1,1,6).setValues([[
-      safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url
+      standardFolderInfo_(ss,{standard:p.standard,aspek:p.aspek,noItem:p.noItem,zipPath:old[6]}) : {id:old[4],url:old[5]};
+    sh.getRange(row,1,1,7).setValues([[
+      safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url,old[6]||""
     ]]);
     return {status:"success",folderUrl:folder.url,
       note:changed?"Folder baharu dicipta jika perlu. Folder lama tidak dipadam.":""};
@@ -474,7 +481,7 @@ function syncStandardFolders(ss,p) {
       if(v[4]&&v[5])continue;
       if(scanned>=maxBatch){pending++;continue;}
       scanned++;
-      var info=standardFolderInfo_(ss,{standard:v[0],aspek:v[2],noItem:v[1]});
+      var info=standardFolderInfo_(ss,{standard:v[0],aspek:v[2],noItem:v[1],zipPath:v[6]||""});
       sh.getRange(i+1,5,1,2).setValues([[info.id,info.url]]);
       created++;
     }
@@ -623,7 +630,7 @@ function saveEviden(ss,p){
     if(refIndex<0)throw new Error("No Item tiada dalam SENARAI STANDARD.");
     var refRow=refRows[refIndex];
     var refFolder=refRow[4] && refRow[5] ? {id:refRow[4],url:refRow[5]} :
-      standardFolderInfo_(ss,p);
+      standardFolderInfo_(ss,{standard:p.standard,aspek:p.aspek,noItem:p.noItem,zipPath:refRow[6]||""});
     if(!refRow[4] || !refRow[5]){
       referenceSheet.getRange(refIndex+1,5,1,2).setValues([[refFolder.id,refFolder.url]]);
     }
