@@ -1,0 +1,331 @@
+{
+  "source": "Buku SK@S Salinan Digital.pdf",
+  "edition": "Cetakan Pertama, 2024, Jemaah Nazir Kementerian Pendidikan Malaysia",
+  "referencePages": "PDF halaman 24–26, 31–35, 40–108",
+  "referenceType": "Parafrasa Kriteria Kritikal (Standard 1–4) / ringkasan indikator (Standard 5); BUKAN teks Standard Kualiti subaspek individu.",
+  "totalSubaspek": 115,
+  "strengths": [
+    {
+      "code": "A1",
+      "name": "Guru",
+      "subaspek": 8,
+      "pdfPage": 31
+    },
+    {
+      "code": "A2",
+      "name": "Kualiti Pengajaran dan Pembelajaran (PdP)",
+      "subaspek": 1,
+      "pdfPage": 32
+    },
+    {
+      "code": "A3",
+      "name": "Staf Bukan Guru",
+      "subaspek": 6,
+      "pdfPage": 32
+    },
+    {
+      "code": "A4",
+      "name": "Prasarana Akademik",
+      "subaspek": 4,
+      "pdfPage": 33
+    },
+    {
+      "code": "A5",
+      "name": "Prasarana Sukan dan Kokurikulum",
+      "subaspek": 4,
+      "pdfPage": 33
+    },
+    {
+      "code": "A6",
+      "name": "Prasarana Hal Ehwal Murid",
+      "subaspek": 4,
+      "pdfPage": 34
+    },
+    {
+      "code": "A7",
+      "name": "Persekitaran Digital",
+      "subaspek": 3,
+      "pdfPage": 34
+    },
+    {
+      "code": "A8",
+      "name": "Asrama",
+      "subaspek": 6,
+      "pdfPage": 35
+    },
+    {
+      "code": "A9",
+      "name": "Sokongan Ibu Bapa/Penjaga, Komuniti dan Pihak Swasta",
+      "subaspek": 3,
+      "pdfPage": 35
+    }
+  ],
+  "aspects": [
+    {
+      "code": "1.1",
+      "name": "PGB Sebagai Peneraju",
+      "subaspek": 7,
+      "pdfPage": 40,
+      "description": "PGB menerajui aspek pengurusan dan pendidikan di sekolah bagi memastikan matlamat serta objektif yang ditetapkan tercapai."
+    },
+    {
+      "code": "1.2",
+      "name": "PGB Sebagai Pembimbing",
+      "subaspek": 2,
+      "pdfPage": 47,
+      "description": "PGB membimbing untuk meningkatkan kecekapan individu dan kualiti pengurusan sekolah."
+    },
+    {
+      "code": "1.3",
+      "name": "PGB Sebagai Pendorong",
+      "subaspek": 3,
+      "pdfPage": 49,
+      "description": "PGB mendorong warga sekolah supaya melaksanakan tanggungjawab dengan bersungguh-sungguh dan berkualiti."
+    },
+    {
+      "code": "2.1",
+      "name": "Pengurusan Sumber Manusia",
+      "subaspek": 2,
+      "pdfPage": 54,
+      "description": "Sumber manusia diurus bagi meningkatkan kualiti kerja, kepuasan bekerja dan amalan profesionalisme."
+    },
+    {
+      "code": "2.2",
+      "name": "Pengurusan Aset",
+      "subaspek": 1,
+      "pdfPage": 56,
+      "description": "Aset kerajaan diurus untuk kemudahan, keselesaan dan keselamatan warga sekolah."
+    },
+    {
+      "code": "2.3",
+      "name": "Pengurusan Kewangan",
+      "subaspek": 1,
+      "pdfPage": 57,
+      "description": "Kewangan diurus untuk memastikan setiap perbelanjaan memberi pulangan optimum."
+    },
+    {
+      "code": "2.4",
+      "name": "Pengurusan Sumber Pendidikan",
+      "subaspek": 1,
+      "pdfPage": 58,
+      "description": "Sumber pendidikan diurus untuk menyokong peningkatan kualiti pendidikan."
+    },
+    {
+      "code": "2.5",
+      "name": "Iklim",
+      "subaspek": 2,
+      "pdfPage": 59,
+      "description": "Persekitaran dan suasana sekolah diurus supaya kondusif bagi kesejahteraan warga sekolah."
+    },
+    {
+      "code": "2.6",
+      "name": "Pengurusan Perpaduan",
+      "subaspek": 1,
+      "pdfPage": 61,
+      "description": "Pemahaman dan penerimaan terhadap kepelbagaian masyarakat Malaysia diurus untuk memupuk perpaduan."
+    },
+    {
+      "code": "2.7",
+      "name": "Permuafakatan Strategik",
+      "subaspek": 1,
+      "pdfPage": 63,
+      "description": "Permuafakatan strategik diwujudkan untuk menyokong pembelajaran murid ke arah kecemerlangan."
+    },
+    {
+      "code": "3.1.1",
+      "name": "Ketetapan Pelaksanaan Kurikulum",
+      "subaspek": 1,
+      "pdfPage": 67,
+      "description": "Ketetapan dibuat bagi memastikan pematuhan dan keselarasan pelaksanaan kurikulum kebangsaan."
+    },
+    {
+      "code": "3.1.2",
+      "name": "Pengurusan Mata Pelajaran",
+      "subaspek": 4,
+      "pdfPage": 69,
+      "description": "Mata pelajaran diurus untuk meningkatkan kualiti pengajaran dan pembelajaran."
+    },
+    {
+      "code": "3.1.3",
+      "name": "Pengurusan Masa Instruksional",
+      "subaspek": 1,
+      "pdfPage": 73,
+      "description": "Masa instruksional diurus untuk meningkatkan masa pembelajaran berkesan."
+    },
+    {
+      "code": "3.1.4",
+      "name": "Pengurusan Penilaian Murid",
+      "subaspek": 1,
+      "pdfPage": 74,
+      "description": "Penilaian murid diurus untuk mengesan kemajuan penguasaan dan pencapaian murid."
+    },
+    {
+      "code": "3.2.1",
+      "name": "Ketetapan Pelaksanaan Kokurikulum",
+      "subaspek": 1,
+      "pdfPage": 75,
+      "description": "Ketetapan dibuat bagi memastikan pematuhan dan keselarasan pelaksanaan kokurikulum."
+    },
+    {
+      "code": "3.2.2",
+      "name": "Pengurusan Kelab/Persatuan",
+      "subaspek": 1,
+      "pdfPage": 77,
+      "description": "Kelab dan persatuan diurus untuk mengukuhkan pembelajaran, mengembangkan potensi dan memupuk nilai positif."
+    },
+    {
+      "code": "3.2.3",
+      "name": "Pengurusan Badan Beruniform",
+      "subaspek": 1,
+      "pdfPage": 78,
+      "description": "Badan beruniform diurus untuk meningkatkan disiplin, daya kepimpinan dan pembangunan perwatakan murid."
+    },
+    {
+      "code": "3.2.4",
+      "name": "Pengurusan Sukan/Permainan",
+      "subaspek": 1,
+      "pdfPage": 79,
+      "description": "Sukan dan permainan diurus untuk mengukuhkan pengetahuan, kemahiran dan nilai sosial positif."
+    },
+    {
+      "code": "3.2.5",
+      "name": "Pengurusan Program Kecemerlangan Kokurikulum",
+      "subaspek": 1,
+      "pdfPage": 80,
+      "description": "Program kecemerlangan kokurikulum diurus untuk mengoptimumkan bakat dan potensi murid."
+    },
+    {
+      "code": "3.2.6",
+      "name": "Pengurusan Sukan Untuk Semua",
+      "subaspek": 1,
+      "pdfPage": 81,
+      "description": "Sukan Untuk Semua diurus untuk membudayakan sukan, gaya hidup sihat dan kecergasan murid."
+    },
+    {
+      "code": "3.2.7",
+      "name": "Pengurusan Pentaksiran Kokurikulum",
+      "subaspek": 1,
+      "pdfPage": 83,
+      "description": "Pentaksiran kokurikulum diurus untuk mengesan pencapaian murid."
+    },
+    {
+      "code": "3.3.1",
+      "name": "Ketetapan Pelaksanaan Hal Ehwal Murid",
+      "subaspek": 1,
+      "pdfPage": 84,
+      "description": "Ketetapan dibuat bagi memastikan pematuhan dan keselarasan pelaksanaan hal ehwal murid."
+    },
+    {
+      "code": "3.3.2",
+      "name": "Pengurusan Disiplin Murid",
+      "subaspek": 1,
+      "pdfPage": 85,
+      "description": "Disiplin murid diurus untuk membentuk sikap dan perlakuan positif dalam pembangunan sahsiah murid."
+    },
+    {
+      "code": "3.3.3",
+      "name": "Pengurusan Keselamatan Murid",
+      "subaspek": 1,
+      "pdfPage": 86,
+      "description": "Keselamatan murid diurus untuk memastikan murid selamat dan memupuk amalan menjaga keselamatan."
+    },
+    {
+      "code": "3.3.4",
+      "name": "Pengurusan Kesihatan Murid",
+      "subaspek": 1,
+      "pdfPage": 87,
+      "description": "Program dan perkhidmatan kesihatan diurus bagi meningkatkan kesihatan murid dan menggalakkan gaya hidup sihat."
+    },
+    {
+      "code": "3.3.5",
+      "name": "Pengurusan Bantuan Pelajaran Murid",
+      "subaspek": 1,
+      "pdfPage": 88,
+      "description": "Bantuan pelajaran murid diurus untuk membantu memenuhi keperluan fizikal, mental dan emosi."
+    },
+    {
+      "code": "3.3.6",
+      "name": "Pengurusan Perkhidmatan Bimbingan dan Kaunseling",
+      "subaspek": 1,
+      "pdfPage": 89,
+      "description": "Perkhidmatan bimbingan dan kaunseling diurus untuk pembangunan sahsiah, pendidikan kerjaya dan kesejahteraan murid."
+    },
+    {
+      "code": "3.3.7",
+      "name": "Pengurusan Pentaksiran Psikometrik",
+      "subaspek": 1,
+      "pdfPage": 90,
+      "description": "Pentaksiran psikometrik diurus untuk membantu membangunkan potensi murid mengikut personaliti, minat dan kecenderungan."
+    },
+    {
+      "code": "4.1",
+      "name": "Guru Sebagai Perancang",
+      "subaspek": 1,
+      "pdfPage": 94,
+      "description": "Guru merancang kesediaan dan persediaan rapi untuk pelaksanaan pembelajaran dan pemudahcaraan."
+    },
+    {
+      "code": "4.2",
+      "name": "Guru Sebagai Pengawal",
+      "subaspek": 2,
+      "pdfPage": 95,
+      "description": "Guru mengawal pelaksanaan PdPc supaya proses pembelajaran berjalan lancar mengikut perancangan."
+    },
+    {
+      "code": "4.3",
+      "name": "Guru Sebagai Pembimbing",
+      "subaspek": 1,
+      "pdfPage": 97,
+      "description": "Guru membimbing murid supaya menguasai pengetahuan, kemahiran dan nilai mengikut objektif pembelajaran."
+    },
+    {
+      "code": "4.4",
+      "name": "Guru Sebagai Pendorong",
+      "subaspek": 2,
+      "pdfPage": 98,
+      "description": "Guru mendorong murid bagi meningkatkan motivasi dan kemahiran insaniah."
+    },
+    {
+      "code": "4.5",
+      "name": "Guru Sebagai Penilai",
+      "subaspek": 1,
+      "pdfPage": 101,
+      "description": "Guru menilai untuk mengesan tahap penguasaan murid."
+    },
+    {
+      "code": "4.6",
+      "name": "Murid Sebagai Pembelajar Aktif",
+      "subaspek": 1,
+      "pdfPage": 102,
+      "description": "Murid melibatkan diri secara aktif bagi menguasai pengetahuan, kemahiran dan nilai positif."
+    },
+    {
+      "code": "5.1",
+      "name": "Kemenjadian Murid dalam Akademik",
+      "subaspek": 8,
+      "pdfPage": 108,
+      "description": "Indikator akademik merangkumi PBD, pentaksiran alternatif MBPK dan pencapaian peperiksaan."
+    },
+    {
+      "code": "5.2",
+      "name": "Kemenjadian Murid dalam Kokurikulum",
+      "subaspek": 4,
+      "pdfPage": 108,
+      "description": "Indikator GPS dalam kelab/persatuan, badan beruniform, sukan/permainan dan kokurikulum keseluruhan."
+    },
+    {
+      "code": "5.3",
+      "name": "Kemenjadian Sahsiah Murid",
+      "subaspek": 6,
+      "pdfPage": 108,
+      "description": "Indikator peratus kehadiran murid serta kategori pencapaian sahsiah murid."
+    },
+    {
+      "code": "5.4",
+      "name": "Pencapaian Guru dan Pencapaian Sekolah",
+      "subaspek": 8,
+      "pdfPage": 108,
+      "description": "Indikator bilangan pencapaian guru dan sekolah mengikut peringkat daerah, negeri, kebangsaan dan antarabangsa."
+    }
+  ]
+}
