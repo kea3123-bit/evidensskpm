@@ -1726,7 +1726,12 @@
         ["Standard / No Item", String(r.standard||"")+" / "+String(r.noItem||"")],
         ["Aspek",r.aspek],["Huraian",r.huraian],["PDCA",r.pdca],
         ["Jenis Eviden",r.jenis],["Tajuk",r.tajuk],["Catatan",r.catatan],
-        ["Pemuat Naik",r.pemuatNaik]
+        ["Pemuat Naik",r.pemuatNaik],
+        ["Akses Fail",r.accessStatus==="link"?"Sesiapa dengan pautan — boleh lihat":
+          r.accessStatus==="private"?"Private — kebenaran diperlukan":
+          r.accessStatus==="restricted"?"Perkongsian disekat Google Workspace":
+          r.accessStatus==="external"?"Pautan luar — ikut kebenaran asal":
+          "Belum disahkan (eviden lama)"]
       ];
       const content=fields.map(([label,value])=>'<div style="margin:9px 0"><b>'+escapeHtml(label)+'</b><div style="overflow-wrap:anywhere">'+escapeHtml(value||"—")+'</div></div>').join("");
       const link=safeHref(r.pautan);
