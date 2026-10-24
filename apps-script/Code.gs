@@ -31,7 +31,11 @@ function handleAction(params) {
   params=params||{};
   try {
     var action=String(params.action||"");
-    if (action==="auth_login") return authLogin_(params);
+    if (action==="auth_exchange") return authExchange_(params);
+    // PIN login happens exactly once in the existing e-Keberadaan frontend.
+    // Never invoke loginWithPin here: it creates an extra trusted device and
+    // can evict a real phone from the 2-device limit.
+    if (action==="auth_login") return {status:"error",code:"USE_AUTH_EXCHANGE",message:"Gunakan auth_exchange dengan sesi e-Keberadaan sedia ada."};
     if (action==="auth_logout") {logout_(params.authToken);return {status:"success"};}
     // The former init_system/populate_master endpoints are intentionally disabled.
     // Their original code used clear(), which would overwrite school data.
@@ -451,34 +455,52 @@ function verifySession_(token){
 function logout_(token){
   if(token&&typeof token==="string"&&token.length<201)CacheService.getScriptCache().remove(tokenKey_(token));
 }
-function authLogin_(p) {
-  var email=String(p.email||"").trim().toLowerCase();
-  var pin=String(p.pin||"").trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(pin))
-    return {status:"error",code:"INVALID_CREDENTIALS",message:"Emel atau PIN tidak sah."};
-  // SPES verifies the existing e-Keberadaan login on the SERVER.
-  // Do not accept browser-provided role, name or an unsigned authBoot object.
+/**
+ * SSO: verify the already authenticated e-Keberadaan session on its own server.
+ * The existing e-Keberadaan Bridges.gs (October 11 archive) explicitly allows
+ * getBootstrapData via perf-burst and returns JSON to server-to-server clients.
+ * This does NOT call loginWithPin or register a new trusted device.
+ */
+function authExchange_(p) {
+  var eToken=String(p.ekeToken||"").trim();
+  var expectedEmail=String(p.email||"").trim().toLowerCase();
+  if(!eToken || eToken.length>4096 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedEmail)) {
+    return {status:"error",code:"BAD_REQUEST",message:"Sesi e-Keberadaan atau emel tidak sah."};
+  }
+  var id="spes_exchange_"+Utilities.getUuid();
+  var origin=PropertiesService.getScriptProperties().getProperty("AUTH_BRIDGE_ORIGIN") || "https://kea3123-bit.github.io";
   var bridgePayload={
-    id:"spes_"+Utilities.getUuid(),channel:"perf-burst",method:"loginWithPin",
-    args:[email,pin,{userAgent:"SPES-SKAS-AppScript"},""],
-    origin:PropertiesService.getScriptProperties().getProperty("AUTH_BRIDGE_ORIGIN") || "https://kea3123-bit.github.io"
+    id:id,channel:"perf-burst",method:"getBootstrapData",
+    args:[eToken],origin:origin
   };
   var resp=UrlFetchApp.fetch(cfg_("EKEBERADAAN_WEB_APP_URL"),{
     method:"post",payload:{bridge:"1",payload:JSON.stringify(bridgePayload)},
     followRedirects:true,muteHttpExceptions:true
   });
-  if(resp.getResponseCode()!==200)throw new Error("e-Keberadaan tidak dapat dicapai oleh Apps Script.");
+  if(resp.getResponseCode()!==200) {
+    return {status:"error",code:"BRIDGE_HTTP_ERROR",message:"Bridge e-Keberadaan tidak dapat dicapai daripada Apps Script SK@S."};
+  }
   var answer;
-  try{answer=JSON.parse(resp.getContentText());}
-  catch(e){throw new Error("Respons e-Keberadaan bukan JSON. Semak akses Web App.");}
-  var account=answer&&answer.value&&answer.value.boot&&answer.value.boot.user;
-  if(!answer.ok||!answer.value.ok||!account||
-    String(account.email||"").trim().toLowerCase()!==email)
-    return {status:"error",code:"INVALID_CREDENTIALS",message:"Pengesahan e-Keberadaan gagal."};
-  var user=getVerifiedUser_(email);
-  if(!user||!user.name)return {status:"error",code:"FORBIDDEN",message:"Akaun tiada atau tidak aktif."};
+  try { answer=JSON.parse(resp.getContentText()); }
+  catch(err) {
+    return {status:"error",code:"BRIDGE_INVALID_JSON",message:"Endpoint e-Keberadaan bukan respons JSON. Semak URL dan deployment."};
+  }
+  if(!answer || answer.type!=="EK_BRIDGE_RESULT" || answer.id!==id ||
+     answer.channel!=="perf-burst" || answer.ok!==true) {
+    return {status:"error",code:"EKE_SESSION_REJECTED",message:"Sesi e-Keberadaan tidak dapat disahkan. Log masuk semula atau semak kebenaran origin."};
+  }
+  var account=answer.value&&answer.value.user;
+  if(!account || account.active!==true ||
+     String(account.email||"").trim().toLowerCase()!==expectedEmail ||
+     account.mustChangePassword===true) {
+    return {status:"error",code:"IDENTITY_MISMATCH",message:"Identiti atau status akaun e-Keberadaan tidak sepadan."};
+  }
+  var user=getVerifiedUser_(expectedEmail);
+  if(!user || !user.name) {
+    return {status:"error",code:"FORBIDDEN",message:"Akaun tidak aktif dalam PENGGUNA."};
+  }
   var token=Utilities.getUuid()+Utilities.getUuid();
-  CacheService.getScriptCache().put(tokenKey_(token),JSON.stringify({email:email}),14400);
+  CacheService.getScriptCache().put(tokenKey_(token),JSON.stringify({email:user.email}),14400);
   return {status:"success",authToken:token,expiresIn:14400,
     user:{email:user.email,name:user.name,role:user.isAdmin?"ADMIN":"USER"}};
 }
