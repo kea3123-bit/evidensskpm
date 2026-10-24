@@ -1142,8 +1142,12 @@
     function bookRowMatch(ref,row) {
       if(!ref||!row)return false;
       const code=String(row["No Item"]||"").trim();
-      return (code===ref.code||code.startsWith(ref.code+".")) &&
-        normalizeBookLabel(row.Aspek)===normalizeBookLabel(ref.name);
+      let codeValid=code===ref.code;
+      if(!codeValid && !ref.code.startsWith("5.") && code.startsWith(ref.code+".")){
+        const suffix=code.slice(ref.code.length+1);
+        codeValid=/^[1-9]\d*$/.test(suffix) && Number(suffix)<=Number(ref.subaspek);
+      }
+      return codeValid && normalizeBookLabel(row.Aspek)===normalizeBookLabel(ref.name);
     }
     function bookMatchForRow(row) {
       return SKAS_BOOK_DATA?.aspects.find(ref=>bookRowMatch(ref,row))||null;
