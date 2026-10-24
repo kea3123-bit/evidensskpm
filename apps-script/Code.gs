@@ -135,10 +135,26 @@ function syncZipMasterFolders(ss,p){
   var folders=[];
   skasZipFolders_().forEach(function(g){g.paths.forEach(function(sub){folders.push(g.name+"/"+sub);});});
   var start=Math.max(0,Math.min(folders.length,parseInt(p.offset,10)||0));
-  var end=Math.min(folders.length,start+12),processed=0;
-  for(var i=start;i<end;i++){createZipPathFolder_(ss,folders[i]);processed++;}
-  return {status:"success",processed:processed,nextOffset:end,remaining:folders.length-end,total:folders.length,
-    message:"Struktur folder ZIP sebenar diwujudkan secara berperingkat di Drive."};
+  var end=Math.min(folders.length,start+12),processed=0,linked=0;
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  standardFolderHeaders_(sh);
+  var rows=sh.getDataRange().getValues(),rowByZipPath={};
+  rows.forEach(function(r,i){if(i>0&&r[6])rowByZipPath[String(r[6])]=i+1;});
+  for(var i=start;i<end;i++){
+    var path=folders[i],folder=createZipPathFolder_(ss,path);
+    var targetRow=rowByZipPath[path];
+    if(targetRow){
+      var existing=rows[targetRow-1];
+      if(!existing[4]||!existing[5]){
+        sh.getRange(targetRow,5,1,2).setValues([[folder.id,folder.url]]);
+        linked++;
+      }
+    }
+    processed++;
+  }
+  return {status:"success",processed:processed,linked:linked,nextOffset:end,
+    remaining:folders.length-end,total:folders.length,
+    message:"Struktur folder ZIP diwujudkan dan entri Standard dipautkan di Google Sheets."};
 }
 
 function cfg_(key) {
@@ -354,9 +370,11 @@ function standardFolderHeaders_(sh) {
   if (String(sh.getRange(1, 6).getValue()).trim() !== "Folder URL") {
     sh.getRange(1, 6).setValue("Folder URL");
   }
-  if (String(sh.getRange(1, 7).getValue()).trim() !== "ZIP Path") {
-    sh.getRange(1, 7).setValue("ZIP Path");
+  var existingHeader=String(sh.getRange(1, 7).getValue()).trim();
+  if (existingHeader && existingHeader !== "ZIP Path") {
+    throw new Error("Lajur G SENARAI STANDARD sudah digunakan: "+existingHeader+". Backup dan semak skema sebelum import ZIP.");
   }
+  if (!existingHeader) sh.getRange(1, 7).setValue("ZIP Path");
 }
 function standardKey_(standard, item, aspect) {
   return [standard,item,aspect].map(function(x){return String(x||"").trim().toLowerCase();}).join("|");
