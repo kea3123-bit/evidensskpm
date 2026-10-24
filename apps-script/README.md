@@ -137,3 +137,21 @@ Jalankan langkah berikut hanya dalam projek **SPES-SK@S**:
 **Nota:** jika `Execute as me`, kebenaran ialah milik akaun yang deploy SK@S. Jika `Execute as user accessing the web app`, setiap pengguna mungkin perlu membenarkan scope; ini biasanya tidak diinginkan untuk backend berkongsi Sheets terurus. Semak konfigurasi deployment sebelum mengubah tetapan.
 
 **Google references:** https://developers.google.com/apps-script/reference/script/script-app dan https://developers.google.com/apps-script/guides/services/authorization.
+
+## 9. Satu modul Senarai Standard & Folder SK@S
+
+Dalam menu **Pentadbiran**, modul `Senarai Standard & Folder` kini menggantikan dua modul berasingan sebelum ini. **SENARAI STANDARD** menjadi satu-satunya sumber data, bukan katalog ZIP statik. Setiap baris item dengan gabungan Standard → Aspek → No Item mempunyai pautan folder Drive khusus.
+
+**Tindakan pentadbir:**
+1. Tetapkan `FOLDER DRIVE EVIDEN` kepada **ID folder induk Google Drive yang sah** di Tetapan Sistem. Jika tetapan masih `ROOT` atau kosong, penambahan standard akan ditolak dengan mesej jelas.
+2. Untuk item baharu, klik `Tambah Standard + Folder`. Backend membuat laluan `<Folder Induk>/<Standard>/<Aspek>/<No Item>` di Google Drive dan menyimpan ID/pautan dalam lajur baru `Folder ID` dan `Folder URL` di helaian `SENARAI STANDARD`. Empat lajur lama dikekalkan.
+3. Untuk item yang sedia ada, klik `Segerak Folder Drive` sehingga baki menjadi sifar. Setiap panggilan hanya memproses maksimum 15 item yang belum dipautkan agar tidak melebihi had masa Apps Script. Panggilan berikutnya tidak mengulangi folder yang telah dipaut.
+4. Muat naik fail eviden kini menyimpan ke dalam folder **No Item** yang sepadan. Eviden berbentuk pautan URL tidak memindahkan fail luar.
+5. Penukaran standard/aspek/kod boleh menghasilkan folder baharu. **Folder lama tidak dipadam, dipindahkan atau ditukar nama secara automatik** untuk mengelakkan kehilangan fail. Jika item sudah mempunyai eviden, kod dan Aspek tidak boleh diubah sehingga direkonsiliasi, namun Huraian masih boleh dikemas kini.
+6. Memadam rujukan Standard tidak memadam folder/fail Drive. Jika rujukan mempunyai eviden, pemadaman ditolak.
+
+**Menu baharu:**
+- **Ruang Kerja:** Analisis Utama, Muat Naik Eviden, Senarai Eviden.
+- **Pentadbiran (ADMIN sahaja):** Jawatankuasa SK@S, Senarai Semak, Senarai Standard & Folder, Senarai PPS, Pengurusan Pengguna, Tetapan Sistem.
+
+**Penting:** Data Google Sheets, Drive dan Apps Script yang telah dipasang **tidak berubah hanya kerana kod GitHub dikemas kini**. Deploy semula `apps-script/Code.gs` **projek SK@S sahaja**, kemudian lakukan penyegerakan folder melalui modul Pentadbiran. Jangan deploy atau ubah projek e-Keberadaan.
