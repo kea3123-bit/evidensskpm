@@ -12,7 +12,7 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 function doGet() {
-  return json_({status:"success", service:"SPES-SK@S", version:"3.0", note:"Data memerlukan sesi."});
+  return json_({status:"success",service:"SPES-SK@S",version:"3.1",authMode:"auth_exchange",note:"Data memerlukan sesi."});
 }
 function doPost(e) {
   var p;
@@ -31,6 +31,7 @@ function handleAction(params) {
   params=params||{};
   try {
     var action=String(params.action||"");
+    if (action==="get_version") return {status:"success",service:"SPES-SK@S",version:"3.1",authMode:"auth_exchange"};
     if (action==="auth_exchange") return authExchange_(params);
     // PIN login happens exactly once in the existing e-Keberadaan frontend.
     // Never invoke loginWithPin here: it creates an extra trusted device and
