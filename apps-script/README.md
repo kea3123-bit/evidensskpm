@@ -201,3 +201,21 @@ Kiraan asal **80** merujuk kepada bilangan laluan yang berakhir dengan `.keep` �
 - Fungsi **Bina Folder ZIP di Drive** masih menggunakan semua 80 laluan daun; ia mencipta 94 folder unik kerana folder induk juga diwujudkan. Pautan bagi aspek induk `3.1.2` disegerakkan kepada folder induk yang betul.
 
 **Penting:** Pokok folder asal boleh dipaparkan selepas frontend dan backend terkini aktif, walaupun belum mencipta folder fizikal Google Drive. Ciptaan sebenar memerlukan akaun deployment yang mendapat akses Drive dan tindakan pentadbir. Backup `SENARAI STANDARD` dan uji pada salinan dahulu.
+
+## 12. Pembaikan fail eviden tidak boleh dibuka (Drive sharing)
+
+**Punca ditemui:** `saveEviden` versi sebelumnya mencipta fail Drive menggunakan `folder.createFile(blob)`, kemudian menyimpan `file.getUrl()` **tanpa menetapkan akses bagi pengguna lain**. Paparan `Senarai Eviden` membuka pautan Drive secara terus, jadi akaun lain mungkin menerima "Request access".
+
+**Perubahan:**
+- Borang **Muat Naik Eviden** menawarkan kotak bertanda secara lalai: *Boleh dilihat oleh sesiapa yang mempunyai pautan (Viewer).* Backend menetapkan **hanya fail itu** kepada `DriveApp.Access.ANYONE_WITH_LINK` + `DriveApp.Permission.VIEW` (bukan `EDIT` dan tidak berkongsi folder induk).
+- **Nyah tanda** untuk kekalkan fail bersifat private/inherited, sesuai bagi eviden dengan maklumat sensitif murid, staf atau keluarga.
+- Jika organisasi/Shared Drive menyekat perkongsian pautan, backend **tetap merekodkan fail yang berjaya dimuat naik**, mengembalikan `accessStatus:"restricted"` dan amaran yang jelas. Perkongsian tidak boleh memintas polisi Google Workspace.
+- Untuk fail lama: **Senarai Eviden → Baiki Akses Fail Lama (Admin sahaja)**, dengan prompt pengesahan yang menerangkan risiko perkongsian. Proses 10 rekod setiap panggilan; hanya cuba membuka akses fail `drive.google.com/file/d/<id>` yang terdapat dalam `EVIDEN` dan dipastikan berada di bawah folder induk `FOLDER DRIVE EVIDEN`. Fail luar, dokumen pada domain lain, folder yang tidak diurus aplikasi, dan pautan kosong dilangkau. Folder induk itu sendiri **tidak dipublickan**.
+- Operasi boleh diulang: fail dengan perkongsian `ANYONE_WITH_LINK/VIEW` dilangkau, dan baris eviden tidak diubah.
+- Untuk fail lama yang disimpan di lokasi Drive induk lain (sebelum penukaran konfigurasi), pembaikan automatik akan melangkau fail itu. Pentadbir boleh kongsikan secara manual setelah menyemak akses/kandungan fail.
+
+**Penting:** Anyone with the link **bukan** akses yang dikunci kepada pengguna login SK@S; sesiapa yang menerima pautan boleh melihat fail walaupun tidak mempunyai akaun sekolah. Jangan aktifkan untuk maklumat peribadi/sulit atau eviden yang tidak dibenarkan dikongsi. Jika sekolah mahu akses staf sahaja, gunakan sharing ke akaun/kumpulan sekolah atau domain terhad. Google Workspace mungkin melarang `ANYONE_WITH_LINK`: https://developers.google.com/apps-script/reference/drive/access dan https://support.google.com/a/users/answer/12380484
+
+**Pemasangan:** Sila backup `Code.gs`, tampal keseluruhan `apps-script/Code.gs` terkini ke **projek SPES-SK@S** dan lakukan `Deploy → Manage deployments → Edit → New version → Deploy`. Tindakan GitHub sahaja tidak mengubah permission Drive fail lama. E-Keberadaan tidak perlu disentuh.
+
+**Perlindungan pilihan private:** Versi terkini menyimpan pilihan akses fail dalam lajur O (`Akses Fail`) pada helaian `EVIDEN`. Fungsi membaiki fail lama **melangkau** rekod yang sengaja dipilih `private`, termasuk selepas admin menjalankan pembaikan. Fail lama yang tidak mempunyai status boleh disemak/dibaiki. Jika helaian sedia ada hanya mempunyai 14 lajur, kolum O ditambah tanpa mengubah data A–N. Dalam Perincian Eviden, status akses dipaparkan untuk membantu diagnosis.

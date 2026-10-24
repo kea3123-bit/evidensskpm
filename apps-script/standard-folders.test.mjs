@@ -33,7 +33,7 @@ const standards=sheet([["Standard","No Item","Aspek","Huraian"],
 const eviden=sheet([["ID","Tahun","Pemuat Naik","Standard","No Item","Aspek","Huraian","PDCA","Jenis","Tajuk","Catatan","Pautan","Tarikh"]]);
 const settings=sheet([["ITEM","KAEDAH","NILAI / SENARAI"],["TAHUN PENILAIAN","INPUT","2026"],["FOLDER DRIVE EVIDEN","INPUT",root.id]]);
 const ss={getSheetByName:x=>({"SENARAI STANDARD":standards,"EVIDEN":eviden,"SETTING":settings})[x]||null};
-const sandbox={String,Number,Object,Array,Error,Math,Date,JSON,
+const sandbox={String,Number,Object,Array,Error,Math,Date,JSON,Logger:{log(){}},
  DriveApp:{getFolderById:x=>{if(!folderMap.has(x))throw Error("Unknown folder "+x);return folderMap.get(x)}},
  LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},
  Utilities:{getUuid:()=>"12345678-aaaa-aaaa-bbbb-cccccccccccc",formatDate:()=>"2026-10-24 12:00:00",
