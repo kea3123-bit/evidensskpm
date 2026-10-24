@@ -3,6 +3,160 @@
  * Requires Script Properties (never hardcode database IDs or PIN).
  * IMPORTANT: Replace the entire existing Code.gs when deploying; do not append.
  */
+
+/**
+ * Exact directory labels from user-supplied SKAS_MASTER_FOLDER_2026.zip.
+ * 80 .keep leaf paths, 12 top-level categories; no evidence/document files.
+ * Do not silently substitute them for the complete official SK@S instrument.
+ */
+var SKAS_ZIP_GROUPS_ = [
+  [
+    "00_PENGURUSAN SK@S",
+    "01_Panduan & Instrumen SK@S|02_Surat & Pekeliling|03_Jawatankuasa SK@S|04_Takwim|05_Mesyuarat|06_Pemantauan|07_Tindakan Susulan"
+  ],
+  [
+    "01_STANDARD 1_KEPEMIMPINAN",
+    "1.1_PGB Sebagai Peneraju|1.2_PGB Sebagai Pembimbing|Evidens"
+  ],
+  [
+    "02_STANDARD 2_PENGURUSAN ORGANISASI",
+    "2.1_Pengurusan Sumber Manusia|2.2_Pengurusan Aset|2.3_Pengurusan Kewangan|2.4_Pengurusan Sumber Pendidikan|2.5_Pengurusan Iklim|2.6_Pengurusan Perpaduan|Evidens"
+  ],
+  [
+    "03_STANDARD 3.1_KURIKULUM",
+    "3.1.1_Ketetapan Pelaksanaan Kurikulum|3.1.2_Pengurusan Mata Pelajaran/ASK|3.1.2_Pengurusan Mata Pelajaran/Bahasa Inggeris|3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu|3.1.2_Pengurusan Mata Pelajaran/Mata Pelajaran Lain|3.1.2_Pengurusan Mata Pelajaran/Matematik|3.1.2_Pengurusan Mata Pelajaran/Pendidikan Islam|3.1.2_Pengurusan Mata Pelajaran/Pendidikan Moral|3.1.2_Pengurusan Mata Pelajaran/RBT|3.1.2_Pengurusan Mata Pelajaran/Sains|3.1.2_Pengurusan Mata Pelajaran/Sejarah|Evidens"
+  ],
+  [
+    "04_STANDARD 3.2_KOKURIKULUM",
+    "3.2.1_Kelab & Persatuan|3.2.2_Unit Beruniform|3.2.3_Sukan & Permainan|3.2.4_Penyertaan & Pencapaian|Evidens|PAJSK"
+  ],
+  [
+    "05_STANDARD 3.3_HEM",
+    "3.3.1_Kehadiran|3.3.2_Disiplin|3.3.3_Kebajikan|3.3.4_Bimbingan & Kaunseling|3.3.5_Kesihatan|3.3.6_SPBT|3.3.7_Keselamatan|Evidens"
+  ],
+  [
+    "06_STANDARD 4_PENGAJARAN & PEMBELAJARAN",
+    "4.1_Perancangan PdP|4.2_Pelaksanaan PdP|4.3_Pentaksiran|4.4_Pembelajaran Murid|4.5_Pencerapan|Evidens"
+  ],
+  [
+    "07_STANDARD 5_KEMENJADIAN & PENCAPAIAN",
+    "5.1_Kemenjadian Murid|5.2_Pencapaian Murid|5.3_Pencapaian Guru|5.4_Pencapaian Sekolah|Evidens"
+  ],
+  [
+    "08_PROGRAM & INTERVENSI SEKOLAH",
+    "Akademik|HEM|Intervensi Murid|Kokurikulum|Laporan Program|Pembangunan Guru"
+  ],
+  [
+    "09_ANALISIS & DATA",
+    "Akademik|Analisis SK@S|Disiplin|Kehadiran|Kokurikulum|PBD|Peperiksaan"
+  ],
+  [
+    "10_DOKUMENTASI EVIDENS",
+    "01_Kertas Kerja|02_Minit Mesyuarat|03_Surat|04_Laporan|05_Gambar|06_Sijil|07_Evidens Tambahan"
+  ],
+  [
+    "11_PEMANTAUAN & PENAMBAHBAIKAN",
+    "Analisis|Dapatan|Instrumen Pemantauan|Laporan Penambahbaikan|Pelan Intervensi|Tindakan Susulan"
+  ]
+];
+function skasZipFolders_() {
+  return SKAS_ZIP_GROUPS_.map(function(pair) {
+    return {name:pair[0],paths:pair[1].split("|")};
+  });
+}
+function skasZipStandardEntries_() {
+  var entries=[];
+  skasZipFolders_().forEach(function(group) {
+    var groupMatch=group.name.match(/^0[1-7]_STANDARD (\d+(?:\.\d+)?)_(.*)$/);
+    if(!groupMatch)return;
+    var standard="STANDARD "+groupMatch[1]+": "+groupMatch[2];
+    group.paths.forEach(function(relative) {
+      var parts=relative.split("/");
+      var match=parts[0].match(/^(\d+(?:\.\d+)+)_(.*)$/);
+      if(!match)return; // Evidens and PAJSK are folders, not Standard items.
+      var aspect=match[2]+(parts.length>1?" / "+parts.slice(1).join(" / "):"");
+      var path=group.name+"/"+relative;
+      entries.push({standard:standard,noItem:match[1],aspek:aspect,
+        huraian:"Tiada huraian dalam ZIP. Sila lengkapkan berdasarkan instrumen SK@S.",
+        zipPath:path});
+    });
+  });
+  return entries;
+}
+function isKnownZipPath_(path){
+  return skasZipFolders_().some(function(g){return g.paths.some(function(sub){return g.name+"/"+sub===path;});});
+}
+function createZipPathFolder_(ss,zipPath){
+  if(!isKnownZipPath_(zipPath))throw new Error("Laluan folder tidak wujud dalam ZIP induk yang dibekalkan.");
+  var settings=getSettings_(ss);
+  var rootId=String(settings["FOLDER DRIVE EVIDEN"]||settings["FOLDER DRIVE"]||"").trim();
+  if(!rootId||rootId==="ROOT")throw new Error("Tetapkan ID Folder Drive Eviden yang sah sebelum membina folder ZIP.");
+  var cursor=getOrCreateChildFolder_(DriveApp.getFolderById(rootId),"SKAS_MASTER_FOLDER_2026");
+  zipPath.split("/").forEach(function(part){cursor=getOrCreateChildFolder_(cursor,part);});
+  return {id:cursor.getId(),url:cursor.getUrl()};
+}
+/** Import 39 code-bearing ZIP paths into SENARAI STANDARD, 15 per call.
+ * Non-code folders remain in the Standard module's folder reference catalog.
+ * Never overwrite school-authored rows.
+ */
+function importZipStandards(ss,p){
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  standardFolderHeaders_(sh);
+  var entries=skasZipStandardEntries_();
+  var start=Math.max(0,Math.min(entries.length,parseInt(p.offset,10)||0));
+  var limit=Math.min(entries.length,start+15);
+  var existing=sh.getDataRange().getValues();
+  var existingPath={};
+  var existingComposite={};
+  existing.slice(1).forEach(function(row){
+    if(row[6])existingPath[String(row[6])]=true;
+    existingComposite[standardKey_(row[0],row[1],row[2])]=true;
+  });
+  var added=0,skipped=0;
+  var lock=LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    for(var i=start;i<limit;i++) {
+      var entry=entries[i],key=standardKey_(entry.standard,entry.noItem,entry.aspek);
+      if(existingPath[entry.zipPath]||existingComposite[key]){skipped++;continue;}
+      sh.appendRow([safeCell_(entry.standard),safeCell_(entry.noItem),safeCell_(entry.aspek),
+        safeCell_(entry.huraian),"","",entry.zipPath]);
+      existingPath[entry.zipPath]=true;existingComposite[key]=true;added++;
+    }
+  } finally {lock.releaseLock();}
+  return {status:"success",added:added,skipped:skipped,nextOffset:limit,
+    remaining:entries.length-limit,total:entries.length,
+    message:"Standard daripada ZIP telah diimport tanpa menimpa rekod sedia ada."};
+}
+/** Builds ALL 80 exact ZIP leaf paths under a new ZIP root, in safe batches.
+ * The client passes the next offset, so no hidden mutation of Script Properties.
+ */
+function syncZipMasterFolders(ss,p){
+  var folders=[];
+  skasZipFolders_().forEach(function(g){g.paths.forEach(function(sub){folders.push(g.name+"/"+sub);});});
+  var start=Math.max(0,Math.min(folders.length,parseInt(p.offset,10)||0));
+  var end=Math.min(folders.length,start+12),processed=0,linked=0;
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  standardFolderHeaders_(sh);
+  var rows=sh.getDataRange().getValues(),rowByZipPath={};
+  rows.forEach(function(r,i){if(i>0&&r[6])rowByZipPath[String(r[6])]=i+1;});
+  for(var i=start;i<end;i++){
+    var path=folders[i],folder=createZipPathFolder_(ss,path);
+    var targetRow=rowByZipPath[path];
+    if(targetRow){
+      var existing=rows[targetRow-1];
+      if(!existing[4]||!existing[5]){
+        sh.getRange(targetRow,5,1,2).setValues([[folder.id,folder.url]]);
+        linked++;
+      }
+    }
+    processed++;
+  }
+  return {status:"success",processed:processed,linked:linked,nextOffset:end,
+    remaining:folders.length-end,total:folders.length,
+    message:"Struktur folder ZIP diwujudkan dan entri Standard dipautkan di Google Sheets."};
+}
+
 function cfg_(key) {
   var value = PropertiesService.getScriptProperties().getProperty(key);
   if (!value) throw new Error("Script Property belum diset: " + key);
@@ -23,7 +177,7 @@ function doPost(e) {
 var ADMIN_ACTIONS_ = [
   "delete_eviden","update_settings",
   "save_jawatankuasa","update_jawatankuasa","delete_jawatankuasa",
-  "save_standard","update_standard","delete_standard","sync_standard_folders",
+  "save_standard","update_standard","delete_standard","sync_standard_folders","import_zip_standards","sync_zip_master_folders",
   "save_pps","update_pps","delete_pps",
   "save_checklist","update_checklist","delete_checklist"
 ];
@@ -61,6 +215,8 @@ function handleAction(params) {
       case "update_standard": return updateStandard(ss,params);
       case "delete_standard": return deleteStandard(ss,params);
       case "sync_standard_folders": return syncStandardFolders(ss,params);
+      case "import_zip_standards": return importZipStandards(ss,params);
+      case "sync_zip_master_folders": return syncZipMasterFolders(ss,params);
       case "save_pps": return savePPS(ss,params);
       case "update_pps": return updatePPS(ss,params);
       case "delete_pps": return deletePPS(ss,params);
@@ -142,6 +298,7 @@ function getSystemBundle(ss, tahunReq, auth) {
     settings: settings,
     activeYear: activeYear,
     standards: getSheetObjects(ss, "SENARAI STANDARD"),
+    zipCatalog: skasZipFolders_(),
     pps: getSheetObjects(ss, "SENARAI PPS"),
     users: auth && auth.isAdmin ? usersList : [],
     checklist: getSheetObjects(ss, "SENARAI SEMAK"),
@@ -213,9 +370,14 @@ function standardFolderHeaders_(sh) {
   if (String(sh.getRange(1, 6).getValue()).trim() !== "Folder URL") {
     sh.getRange(1, 6).setValue("Folder URL");
   }
+  var existingHeader=String(sh.getRange(1, 7).getValue()).trim();
+  if (existingHeader && existingHeader !== "ZIP Path") {
+    throw new Error("Lajur G SENARAI STANDARD sudah digunakan: "+existingHeader+". Backup dan semak skema sebelum import ZIP.");
+  }
+  if (!existingHeader) sh.getRange(1, 7).setValue("ZIP Path");
 }
-function standardKey_(standard, item) {
-  return String(standard || "").trim().toLowerCase() + "|" + String(item || "").trim();
+function standardKey_(standard, item, aspect) {
+  return [standard,item,aspect].map(function(x){return String(x||"").trim().toLowerCase();}).join("|");
 }
 function validStandardInput_(p) {
   var values = ["standard", "noItem", "aspek", "huraian"];
@@ -239,6 +401,7 @@ function getOrCreateChildFolder_(parent, name) {
   return matches.hasNext() ? matches.next() : parent.createFolder(name);
 }
 function standardFolderInfo_(ss, p) {
+  if(p.zipPath)return createZipPathFolder_(ss,String(p.zipPath));
   var settings = getSettings_(ss);
   var rootId = String(settings["FOLDER DRIVE EVIDEN"] || settings["FOLDER DRIVE"] || "").trim();
   if (!rootId || rootId === "ROOT") {
@@ -253,9 +416,9 @@ function standardFolderInfo_(ss, p) {
 }
 function duplicateStandard_(sh, p, exceptRow) {
   var list=sh.getDataRange().getValues();
-  var key=standardKey_(p.standard,p.noItem);
+  var key=standardKey_(p.standard,p.noItem,p.aspek);
   return list.some(function(row,i){
-    return i>0 && i+1!==exceptRow && standardKey_(row[0],row[1])===key;
+    return i>0 && i+1!==exceptRow && standardKey_(row[0],row[1],row[2])===key;
   });
 }
 function standardUsedInEviden_(ss, standard, noItem) {
@@ -273,10 +436,10 @@ function saveStandard(ss, p) {
   var lock=LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (duplicateStandard_(sh,p,0)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
+    if (duplicateStandard_(sh,p,0)) return {status:"error",message:"No Item dan Aspek ini sudah wujud dalam Standard yang sama."};
     // Ensure Drive hierarchy exists before committing a reference to Sheets.
     var folder=standardFolderInfo_(ss,p);
-    sh.appendRow([safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url]);
+    sh.appendRow([safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url,""]);
     return {status:"success",folderUrl:folder.url};
   } finally {lock.releaseLock();}
 }
@@ -289,18 +452,21 @@ function updateStandard(ss,p) {
   var lock=LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (duplicateStandard_(sh,p,row)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
-    var old=sh.getRange(row,1,1,6).getValues()[0];
+    if (duplicateStandard_(sh,p,row)) return {status:"error",message:"No Item dan Aspek ini sudah wujud dalam Standard yang sama."};
+    var old=sh.getRange(row,1,1,7).getValues()[0];
     var changed=String(old[0])!==String(p.standard) ||
       String(old[1])!==String(p.noItem) ||
       String(old[2])!==String(p.aspek);
+    if(changed && old[6]){
+      return {status:"error",message:"Item rujukan ZIP: kod/standard/aspek dikunci supaya laluan folder asal kekal. Huraian boleh dikemas kini."};
+    }
     if (changed && standardUsedInEviden_(ss,old[0],old[1])) {
       return {status:"error",message:"Standard/No Item mempunyai eviden. Ubah Huraian sahaja atau pindahkan eviden sebelum menukar kod."};
     }
     var folder = changed || !old[4] || !old[5] ?
-      standardFolderInfo_(ss,p) : {id:old[4],url:old[5]};
-    sh.getRange(row,1,1,6).setValues([[
-      safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url
+      standardFolderInfo_(ss,{standard:p.standard,aspek:p.aspek,noItem:p.noItem,zipPath:old[6]}) : {id:old[4],url:old[5]};
+    sh.getRange(row,1,1,7).setValues([[
+      safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url,old[6]||""
     ]]);
     return {status:"success",folderUrl:folder.url,
       note:changed?"Folder baharu dicipta jika perlu. Folder lama tidak dipadam.":""};
@@ -333,7 +499,7 @@ function syncStandardFolders(ss,p) {
       if(v[4]&&v[5])continue;
       if(scanned>=maxBatch){pending++;continue;}
       scanned++;
-      var info=standardFolderInfo_(ss,{standard:v[0],aspek:v[2],noItem:v[1]});
+      var info=standardFolderInfo_(ss,{standard:v[0],aspek:v[2],noItem:v[1],zipPath:v[6]||""});
       sh.getRange(i+1,5,1,2).setValues([[info.id,info.url]]);
       created++;
     }
@@ -482,7 +648,7 @@ function saveEviden(ss,p){
     if(refIndex<0)throw new Error("No Item tiada dalam SENARAI STANDARD.");
     var refRow=refRows[refIndex];
     var refFolder=refRow[4] && refRow[5] ? {id:refRow[4],url:refRow[5]} :
-      standardFolderInfo_(ss,p);
+      standardFolderInfo_(ss,{standard:p.standard,aspek:p.aspek,noItem:p.noItem,zipPath:refRow[6]||""});
     if(!refRow[4] || !refRow[5]){
       referenceSheet.getRange(refIndex+1,5,1,2).setValues([[refFolder.id,refFolder.url]]);
     }

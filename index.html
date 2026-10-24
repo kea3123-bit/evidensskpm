@@ -273,7 +273,7 @@
         <ul class="nav-list admin-only">
           <li onclick="switchNav('jawatankuasa', this)"><a href="#"><i class="fa-solid fa-sitemap"></i> Jawatankuasa SK@S</a></li>
           <li onclick="switchNav('checklist', this)"><a href="#"><i class="fa-solid fa-list-check"></i> Senarai Semak</a></li>
-          <li onclick="switchNav('standard', this)"><a href="#"><i class="fa-solid fa-folder-tree"></i> Senarai Standard & Folder</a></li>
+          <li onclick="switchNav('standard', this)"><a href="#"><i class="fa-solid fa-folder-tree"></i> Standard</a></li>
           <li onclick="switchNav('pps', this)"><a href="#"><i class="fa-solid fa-users-rectangle"></i> Senarai PPS</a></li>
           <li onclick="switchNav('pengguna', this)"><a href="#"><i class="fa-solid fa-user-gear"></i> Pengurusan Pengguna</a></li>
           <li onclick="switchNav('tetapan', this)"><a href="#"><i class="fa-solid fa-sliders"></i> Tetapan Sistem</a></li>
@@ -386,12 +386,12 @@
         <div id="module-standard" class="module-pane" style="display:none;">
           <div class="page-title-box">
             <div>
-              <h2 class="page-title">Senarai Standard & Folder SK@S</h2>
-              <p style="color:var(--text-muted); font-size:0.85rem;">Satu sumber data: setiap item standard mempunyai struktur folder Google Drive yang sepadan.</p>
+              <h2 class="page-title">Standard</h2>
+              <p style="color:var(--text-muted); font-size:0.85rem;">Urus Standard dan item SK@S. Struktur folder serta integrasi Google Drive ialah fungsi di dalam modul Standard.</p>
             </div>
             <div class="no-print" style="display:flex; gap:10px;">
               <button class="btn-login-full admin-only" onclick="openAddStandardModal()" style="width:auto; padding:8px 16px;">
-                <i class="fa-solid fa-plus"></i> Tambah Standard + Folder
+                <i class="fa-solid fa-plus"></i> Tambah Item Standard
               </button>
               <button class="btn-login-full" onclick="window.print()" style="width:auto; padding:8px 16px;">
                 <i class="fa-solid fa-print"></i> Cetak
@@ -422,6 +422,24 @@
                 <tbody></tbody>
               </table>
             </div>
+          </div>
+          <div class="view-card" id="zip-standard-panel">
+            <div class="page-title-box">
+              <div>
+                <h3 class="panel-heading">Standard daripada ZIP SKAS_MASTER_FOLDER_2026</h3>
+                <p class="helper-text">Sumber: ZIP yang dimuat naik (80 laluan folder dalam 12 kategori). Hanya laluan berkod dijadikan item Standard; kategori pengurusan dan sokongan kekal sebagai folder rujukan, bukan standard rasmi baharu.</p>
+              </div>
+              <div class="no-print admin-only" style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn-login-full" style="width:auto;padding:9px 14px" onclick="importZipStandards()"><i class="fa-solid fa-file-import"></i> Import Item Standard ZIP</button>
+                <button type="button" class="btn-login-full" style="width:auto;padding:9px 14px" onclick="buildZipDriveFolders()"><i class="fa-solid fa-folder-plus"></i> Bina Folder ZIP di Drive</button>
+              </div>
+            </div>
+            <p id="zip-catalog-summary" class="helper-text"></p>
+            <div class="info-strip"><strong>Nota:</strong> ZIP hanya mengandungi folder .keep. Ia bukan senarai penuh subaspek rasmi; huraian item import ditandakan untuk dilengkapkan. Data standard sedia ada tidak akan ditimpa.</div>
+            <div class="no-print">
+              <input id="zip-catalog-search" class="form-control" type="search" placeholder="Cari dalam ZIP: kod standard, aspek, mata pelajaran, folder..." oninput="renderZipCatalog()" style="margin:10px 0">
+            </div>
+            <div id="zip-catalog"></div>
           </div>
           <div class="view-card">
             <div class="page-title-box">
@@ -889,6 +907,7 @@
         renderUploadForm();
         renderEvidenTable();
         renderStandardFolderTree();
+        renderZipCatalog();
         if (isPrivilegedUser()) renderUsersTable();
         return true;
       } catch (err) {
@@ -1109,13 +1128,7 @@
           <div class="form-group">
             <label>Standard *</label>
             <select id="std-add-name" class="form-control" required>
-              <option value="STANDARD 1: KEPIMPINAN">Standard 1: Kepimpinan</option>
-              <option value="STANDARD 2: PENGURUSAN ORGANISASI">Standard 2: Pengurusan Organisasi</option>
-              <option value="STANDARD 3.1: PENGURUSAN KURIKULUM">Standard 3.1: Pengurusan Kurikulum</option>
-              <option value="STANDARD 3.2: PENGURUSAN KOKURIKULUM">Standard 3.2: Pengurusan Kokurikulum</option>
-              <option value="STANDARD 3.3: PENGURUSAN HAL EHWAL MURID">Standard 3.3: Pengurusan HEM</option>
-              <option value="STANDARD 4: PEMBELAJARAN DAN PEMUDAHCARAAN">Standard 4: Pembelajaran dan Pemudahcaraan</option>
-              <option value="STANDARD 5: KEMENJADIAN MURID">Standard 5: Kemenjadian Murid, Pencapaian Guru dan Sekolah</option>
+              ${standardOptions()}
             </select>
           </div>
           <div class="form-group">
@@ -1937,6 +1950,91 @@
       const result = await standardRequest({action:"sync_standard_folders"},"Menyegerakkan folder Standard");
       if (result) alert((result.message||"Penyegerakan selesai.")+" "+result.synced+" folder diproses."+
         (result.remaining?" "+result.remaining+" masih menunggu; tekan Segerak Folder Drive sekali lagi.":""));
+    }
+
+    function zipGroupIsStandard(name) {
+      return /^0[1-7]_STANDARD \d+(?:\.\d+)?_/.test(String(name||""));
+    }
+    function zipGroupStandardName(name) {
+      const match = String(name||"").match(/^0[1-7]_STANDARD (\d+(?:\.\d+)?)_(.+)$/);
+      return match ? "STANDARD "+match[1]+": "+match[2] : "";
+    }
+    function standardOptions() {
+      const defaults=[
+        "STANDARD 1: KEPIMPINAN","STANDARD 2: PENGURUSAN ORGANISASI",
+        "STANDARD 3.1: PENGURUSAN KURIKULUM","STANDARD 3.2: PENGURUSAN KOKURIKULUM",
+        "STANDARD 3.3: PENGURUSAN HAL EHWAL MURID",
+        "STANDARD 4: PEMBELAJARAN DAN PEMUDAHCARAAN",
+        "STANDARD 5: KEMENJADIAN MURID"
+      ];
+      const zip=(SYSTEM_BUNDLE?.zipCatalog||[]).map(g=>zipGroupStandardName(g.name)).filter(Boolean);
+      const existing=(SYSTEM_BUNDLE?.standards||[]).map(r=>r.Standard);
+      return [...new Set([...defaults,...zip,...existing])].filter(Boolean).map(name=>
+        '<option value="'+escapeAttr(name)+'">'+escapeHtml(name)+'</option>').join("");
+    }
+    function renderZipCatalog() {
+      const host=document.getElementById("zip-catalog");
+      if(!host || !SYSTEM_BUNDLE)return;
+      const groups=SYSTEM_BUNDLE.zipCatalog||[];
+      const q=normalizeSearch(document.getElementById("zip-catalog-search")?.value||"");
+      let shown=0, standardCount=0;
+      const importedPaths=new Set((SYSTEM_BUNDLE.standards||[]).map(s=>String(s["ZIP Path"]||"")).filter(Boolean));
+      const markup=groups.map(group=>{
+        const items=(group.paths||[]).filter(path=>!q||normalizeSearch(group.name+"/"+path).includes(q));
+        if(!items.length)return "";
+        shown+=items.length;
+        const isStd=zipGroupIsStandard(group.name);
+        if(isStd)standardCount+=items.filter(x=>/^\d+(?:\.\d+)+_/.test(x)).length;
+        return '<details class="folder-group" '+(q?'open':'')+'><summary>'+
+          '<i class="fa-solid fa-'+(isStd?'book':'folder')+'"></i> '+
+          escapeHtml(group.name)+' <small>('+items.length+' laluan)</small></summary><div class="folder-list">'+
+          items.map(path=>{
+            const isItem=isStd&&/^\d+(?:\.\d+)+_/.test(path);
+            const imported=importedPaths.has(group.name+"/"+path);
+            return '<div class="folder-path"><span>'+escapeHtml(path)+'</span><small>'+
+              (isItem?(imported?'Dalam Senarai Standard':'Rujukan ZIP — belum import'):'Folder sokongan')+
+              '</small></div>';
+          }).join("")+'</div></details>';
+      }).filter(Boolean);
+      host.innerHTML=markup.join("")||'<p class="helper-text">Tiada padanan carian.</p>';
+      document.getElementById("zip-catalog-summary").textContent=
+        shown+" daripada 80 laluan folder dipaparkan · "+standardCount+
+        " laluan item Standard dalam paparan. Sebanyak 39 laluan Standard tersedia untuk import daripada ZIP.";
+    }
+    let ZIP_BATCH_BUSY=false;
+    async function runZipBatch(action,total,subject) {
+      if(!isPrivilegedUser()||!SPES_AUTH_TOKEN)return alert("Tindakan pentadbir memerlukan sesi SK@S terkini.");
+      if(ZIP_BATCH_BUSY)return;
+      if(!confirm(subject+"? Proses ini tidak akan menimpa rekod atau memadam fail sedia ada."))return;
+      ZIP_BATCH_BUSY=true;
+      let offset=0,done=0,skipped=0;
+      showLoader(subject+"...");
+      try {
+        while(offset<total){
+          const res=await spesFetch(SPES_API_URL,{method:"POST",body:JSON.stringify({action,offset})});
+          if(!res.ok)throw new Error("HTTP "+res.status);
+          const result=await res.json();
+          if(result.status!=="success")throw new Error(result.message||"Gagal memproses "+subject);
+          if(!(Number(result.nextOffset)>offset))throw new Error("Proses import tidak meneruskan kedudukan.");
+          offset=Number(result.nextOffset);
+          done+=Number(result.added??result.processed??0);
+          skipped+=Number(result.skipped||0);
+          const label=document.getElementById("loader-title");
+          if(label)label.innerText=subject+": "+offset+"/"+total;
+          if(result.remaining===0)break;
+        }
+        await loadAppBundle();
+        alert(subject+" selesai. Diproses: "+done+(skipped?" · Rekod sedia ada dikekalkan: "+skipped:"")+".");
+      }catch(err){
+        alert(subject+" terhenti pada "+offset+"/"+total+": "+(err.message||err)+
+          ". Anda boleh ulangi proses; import tidak akan gandakan item yang telah disimpan.");
+      }finally{ZIP_BATCH_BUSY=false;hideLoader();}
+    }
+    async function importZipStandards() {
+      await runZipBatch("import_zip_standards",39,"Import 39 item Standard daripada ZIP");
+    }
+    async function buildZipDriveFolders() {
+      await runZipBatch("sync_zip_master_folders",80,"Bina semua 80 folder daripada ZIP di Google Drive");
     }
   </script>
 </body>
