@@ -23,7 +23,7 @@ function doPost(e) {
 var ADMIN_ACTIONS_ = [
   "delete_eviden","update_settings",
   "save_jawatankuasa","update_jawatankuasa","delete_jawatankuasa",
-  "save_standard","update_standard","delete_standard",
+  "save_standard","update_standard","delete_standard","sync_standard_folders",
   "save_pps","update_pps","delete_pps",
   "save_checklist","update_checklist","delete_checklist"
 ];
@@ -60,6 +60,7 @@ function handleAction(params) {
       case "save_standard": return saveStandard(ss,params);
       case "update_standard": return updateStandard(ss,params);
       case "delete_standard": return deleteStandard(ss,params);
+      case "sync_standard_folders": return syncStandardFolders(ss,params);
       case "save_pps": return savePPS(ss,params);
       case "update_pps": return updatePPS(ss,params);
       case "delete_pps": return deletePPS(ss,params);
@@ -199,33 +200,146 @@ function deleteJawatankuasa(ss, p) {
 // -------------------------------------------------------------
 // 2. PENGURUSAN SENARAI RUJUKAN STANDARD (CRUD)
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// STANDARD ↔ FOLDER GOOGLE DRIVE (SENARAI STANDARD IS SINGLE SOURCE OF TRUTH)
+// -------------------------------------------------------------
+// Keep the original 4 columns and add columns 5-6 for Drive folder references.
+// NEVER rename, move or delete a populated folder automatically.
+function standardFolderHeaders_(sh) {
+  if (!sh) throw new Error("Helaian SENARAI STANDARD tidak wujud.");
+  if (String(sh.getRange(1, 5).getValue()).trim() !== "Folder ID") {
+    sh.getRange(1, 5).setValue("Folder ID");
+  }
+  if (String(sh.getRange(1, 6).getValue()).trim() !== "Folder URL") {
+    sh.getRange(1, 6).setValue("Folder URL");
+  }
+}
+function standardKey_(standard, item) {
+  return String(standard || "").trim().toLowerCase() + "|" + String(item || "").trim();
+}
+function validStandardInput_(p) {
+  var values = ["standard", "noItem", "aspek", "huraian"];
+  values.forEach(function(k) {
+    if (!String(p[k] || "").trim()) throw new Error("Medan wajib tiada: " + k);
+  });
+  if (!/^\d+(?:\.\d+){1,3}$/.test(String(p.noItem).trim())) {
+    throw new Error("No Item mesti seperti 1.1.1 atau 3.1.2.1.");
+  }
+  var stdCode = (String(p.standard).match(/^STANDARD\s+(\d+(?:\.\d+)?)/i) || [])[1];
+  if (!stdCode || !(String(p.noItem) === stdCode || String(p.noItem).indexOf(stdCode + ".") === 0)) {
+    throw new Error("No Item tidak sepadan dengan Standard.");
+  }
+}
+function cleanFolderPart_(part) {
+  var name = String(part || "").replace(/[\x00-\x1f\\/:*?"<>|#%{}]/g, "-").replace(/\s+/g, " ").trim();
+  return (name || "Tanpa Nama").slice(0, 100);
+}
+function getOrCreateChildFolder_(parent, name) {
+  var matches = parent.getFoldersByName(name);
+  return matches.hasNext() ? matches.next() : parent.createFolder(name);
+}
+function standardFolderInfo_(ss, p) {
+  var settings = getSettings_(ss);
+  var rootId = String(settings["FOLDER DRIVE EVIDEN"] || settings["FOLDER DRIVE"] || "").trim();
+  if (!rootId || rootId === "ROOT") {
+    throw new Error("Tetapkan ID Folder Drive Eviden yang sah di Tetapan Sistem terlebih dahulu.");
+  }
+  // Protect existing Drive folders from accidental modification/deletion.
+  var root = DriveApp.getFolderById(rootId);
+  var std = getOrCreateChildFolder_(root, cleanFolderPart_(p.standard));
+  var aspect = getOrCreateChildFolder_(std, cleanFolderPart_(p.aspek));
+  var item = getOrCreateChildFolder_(aspect, cleanFolderPart_(p.noItem));
+  return {id:item.getId(),url:item.getUrl()};
+}
+function duplicateStandard_(sh, p, exceptRow) {
+  var list=sh.getDataRange().getValues();
+  var key=standardKey_(p.standard,p.noItem);
+  return list.some(function(row,i){
+    return i>0 && i+1!==exceptRow && standardKey_(row[0],row[1])===key;
+  });
+}
+function standardUsedInEviden_(ss, standard, noItem) {
+  var sh=ss.getSheetByName("EVIDEN");
+  if (!sh) return false;
+  var values=sh.getDataRange().getValues();
+  return values.some(function(row,i){
+    return i>0 && String(row[3])===String(standard) && String(row[4])===String(noItem);
+  });
+}
 function saveStandard(ss, p) {
-  var sh = ss.getSheetByName("SENARAI STANDARD");
-  if (!sh) return { status: "error", message: "Helaian SENARAI STANDARD tiada." };
-  sh.appendRow([safeCell_(p.standard), safeCell_(p.noItem), safeCell_(p.aspek), safeCell_(p.huraian)]);
-  return { status: "success" };
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  validStandardInput_(p);
+  standardFolderHeaders_(sh);
+  var lock=LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    if (duplicateStandard_(sh,p,0)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
+    // Ensure Drive hierarchy exists before committing a reference to Sheets.
+    var folder=standardFolderInfo_(ss,p);
+    sh.appendRow([safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url]);
+    return {status:"success",folderUrl:folder.url};
+  } finally {lock.releaseLock();}
 }
-
-function updateStandard(ss, p) {
-  var sh = ss.getSheetByName("SENARAI STANDARD");
-  if (!sh) return { status: "error", message: "Helaian SENARAI STANDARD tiada." };
-  var row = parseInt(p.row, 10);
-  if (isSafeRow_(row,sh)) {
-    sh.getRange(row, 1, 1, 4).setValues([[p.standard, p.noItem, p.aspek, p.huraian]]);
-    return { status: "success" };
-  }
-  return { status: "error", message: "Baris tidak sah." };
+function updateStandard(ss,p) {
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  validStandardInput_(p);
+  var row=Number(p.row);
+  if (!isSafeRow_(row,sh)) return {status:"error",message:"Baris tidak sah."};
+  standardFolderHeaders_(sh);
+  var lock=LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    if (duplicateStandard_(sh,p,row)) return {status:"error",message:"No Item ini sudah wujud dalam Standard yang sama."};
+    var old=sh.getRange(row,1,1,6).getValues()[0];
+    var changed=String(old[0])!==String(p.standard) ||
+      String(old[1])!==String(p.noItem) ||
+      String(old[2])!==String(p.aspek);
+    if (changed && standardUsedInEviden_(ss,old[0],old[1])) {
+      return {status:"error",message:"Standard/No Item mempunyai eviden. Ubah Huraian sahaja atau pindahkan eviden sebelum menukar kod."};
+    }
+    var folder = changed || !old[4] || !old[5] ?
+      standardFolderInfo_(ss,p) : {id:old[4],url:old[5]};
+    sh.getRange(row,1,1,6).setValues([[
+      safeCell_(p.standard),safeCell_(p.noItem),safeCell_(p.aspek),safeCell_(p.huraian),folder.id,folder.url
+    ]]);
+    return {status:"success",folderUrl:folder.url,
+      note:changed?"Folder baharu dicipta jika perlu. Folder lama tidak dipadam.":""};
+  } finally {lock.releaseLock();}
 }
-
-function deleteStandard(ss, p) {
-  var sh = ss.getSheetByName("SENARAI STANDARD");
-  if (!sh) return { status: "error", message: "Helaian SENARAI STANDARD tiada." };
-  var row = parseInt(p.row, 10);
-  if (isSafeRow_(row,sh)) {
-    sh.deleteRow(row);
-    return { status: "success" };
+function deleteStandard(ss,p) {
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  var row=Number(p.row);
+  if (!isSafeRow_(row,sh)) return {status:"error",message:"Baris tidak sah."};
+  var old=sh.getRange(row,1,1,2).getValues()[0];
+  if (standardUsedInEviden_(ss,old[0],old[1])) {
+    return {status:"error",message:"Tidak boleh padam item ini kerana sudah mempunyai eviden. Rekod dan folder dikekalkan."};
   }
-  return { status: "error", message: "Baris tidak sah." };
+  sh.deleteRow(row);
+  return {status:"success",message:"Rujukan standard dipadam; folder dan fail Drive dikekalkan."};
+}
+function syncStandardFolders(ss,p) {
+  var sh=ss.getSheetByName("SENARAI STANDARD");
+  standardFolderHeaders_(sh);
+  var lock=LockService.getScriptLock();
+  lock.waitLock(20000);
+  try{
+    var values=sh.getDataRange().getValues();
+    var scanned=0,created=0,pending=0;
+    var maxBatch=15;
+    // Repeated calls are idempotent: skip rows with existing folder mapping.
+    for(var i=1;i<values.length;i++){
+      var v=values[i];
+      if(!String(v[0]||"").trim()||!String(v[1]||"").trim())continue;
+      if(v[4]&&v[5])continue;
+      if(scanned>=maxBatch){pending++;continue;}
+      scanned++;
+      var info=standardFolderInfo_(ss,{standard:v[0],aspek:v[2],noItem:v[1]});
+      sh.getRange(i+1,5,1,2).setValues([[info.id,info.url]]);
+      created++;
+    }
+    return {status:"success",synced:created,remaining:pending,
+      message:pending?"Sebahagian folder siap. Tekan Segerak sekali lagi untuk baki.":"Folder Standard telah disegerakkan."};
+  } finally {lock.releaseLock();}
 }
 
 // -------------------------------------------------------------
