@@ -21,15 +21,29 @@ Nilai spreadsheet ID tidak dimasukkan dalam kod di repo awam ini. Rujuk salinan 
 
 4. **Gantikan kandungan fail `Code.gs` asal dengan SEMUA kandungan** `apps-script/Code.gs`. Jangan tampal di hujung fail lama kerana fungsi `doPost`/lain-lain akan bertindih.
 5. Jika menggunakan `clasp`, fail `appsscript.json` di sini mempunyai tetapan runtime V8 dan scopes yang diperlukan. Dalam editor Apps Script, manifest asal boleh dikekalkan jika sudah mempunyai kebenaran sesuai.
-6. Uji **pengesahan server-to-server e-Keberadaan** pada deployment ujian sebelum menggantikan deployment produksi: `UrlFetchApp.fetch` mestilah boleh mencapai Web App e-Keberadaan, dan endpoint `bridge=1` perlu mengembalikan JSON `loginWithPin` yang sah. Jika ada halaman login Google/HTML atau bridge menolak origin, integrasi auth mesti dibaiki di e-Keberadaan dahulu. **Tiada bypass PIN/role yang selamat**.
+6. Uji **pengesahan server-to-server e-Keberadaan** pada deployment ujian sebelum menggantikan deployment produksi: `UrlFetchApp.fetch` mestilah boleh mencapai Web App e-Keberadaan, dan endpoint `bridge=1` perlu mengembalikan JSON untuk kaedah `getBootstrapData` apabila token sesi e-Keberadaan yang sah dihantar. Ini menggunakan fungsi sedia ada daripada fail `Bridges.gs` dalam ZIP asal — **jangan edit/deploy semula e-Keberadaan jika ia sudah berfungsi**. Jika muncul HTML login Google atau ralat origin, semak URL/deployment dan `AUTH_BRIDGE_ORIGIN` di projek SK@S dahulu. **Tiada bypass PIN/role yang selamat**.
 7. **Deploy → Manage deployments → Edit (pensel) → Version: New version → Deploy.** Semak URL `/exec` kekal sama. Jika URL baharu, kemas kini `SPES_API_URL` dalam `index.html` dan deploy frontend.
 8. Uji login sebagai **USER** dan **ADMIN**, baca Senarai Standard, muat naik pautan percubaan, kemas kini eviden sendiri, lihat dashboard, dan pastikan USER tidak boleh memadam melalui permintaan API terus.
+
+## Kenapa perubahan ini dibuat selepas rollback e-Keberadaan
+
+ZIP **apps-script.zip** e-Keberadaan (modular) sudah memiliki fungsi `loginWithPin` dan `getBootstrapData` dalam whitelist `Bridges.gs`. `loginWithPin` mendaftarkan/memperbaharui peranti dipercayai. SK@S tidak sepatutnya memanggilnya lagi apabila pengguna sudah login pada frontend.
+
+**Aliran yang disyorkan:**
+
+1. Frontend SK@S → e-Keberadaan: `loginWithPin(email,PIN)` **sekali** dan menerima token sesi.
+2. Frontend SK@S → backend SK@S: `auth_exchange(email,ekeToken)`. PIN tidak dihantar semula.
+3. Backend SK@S → e-Keberadaan: `getBootstrapData(ekeToken)` melalui bridge `perf-burst`; menerima identiti sah.
+4. Backend SK@S menyemak identiti dengan `PENGGUNA` dalam Google Sheets dan mengeluarkan sesi terhad SK@S.
+
+**Ujian penting:** Jangan log atau cetak token/PIN. Panggilan `getBootstrapData` ialah API read/bootstrap e-Keberadaan, tetapi kod e-Keberadaan mungkin turut menjalankan housekeeping/trigger sendiri. Periksa output dan ujian login sebenar sebelum naik taraf Apps Script SK@S produksi.
 
 ## 2. API yang digunakan oleh frontend
 
 | Action | Hak akses / tujuan |
 |---|---|
-| `auth_login` | Terima email+PIN sekali; sahkan melalui web app e-Keberadaan dari server; padankan PENGGUNA aktif; pulangkan `authToken` 4 jam |
+| `auth_exchange` | Pertukaran token sesi e-Keberadaan yang telah disahkan; panggil `getBootstrapData` melalui bridge server-to-server tanpa PIN atau pendaftaran peranti baharu; padankan PENGGUNA aktif; pulangkan `authToken` SK@S 4 jam |
+| `auth_login` | Tidak digunakan, dipulangkan `USE_AUTH_EXCHANGE`; elakkan login PIN dua kali yang mengganggu peranti e-Keberadaan |
 | `auth_logout` | Padam cache token |
 | `get_bundle` | Semua pengguna sah; tahun aktif daripada SETTING, bukan disekat pada 2026 |
 | `save_eviden` | Semua pengguna sah; server pilih nama/email/tahun sebenar, validasi Standard–Aspek–Item dan PDCA |
@@ -55,7 +69,8 @@ Frontend semasa menyokong kedua-dua backend: pada versi lama, login melalui e-Ke
 
 ## 4. Had yang masih perlu disemak
 
-- **Keserasian e-Keberadaan server-to-server belum dapat diuji secara live** tanpa mengakses endpoint autentikasi menggunakan akaun sekolah sebenar. Jika gagal, jangan aktifkan deployment baharu di produksi dahulu; tambah endpoint verifikasi/tiket bertandatangan dalam e-Keberadaan atau sesuaikan bridge dengan selamat.
+- **Keserasian e-Keberadaan server-to-server belum dapat diuji secara live** tanpa akaun sebenar. ZIP e-Keberadaan yang diterima mengandungi `Bridges.gs` dengan laluan `getBootstrapData`, `perf-burst` dan whitelist origin yang diperlukan. Jangan edit kod e-Keberadaan; pastikan deployment lamanya masih mengandungi fungsi ini. Jika gagal, batalkan deployment SK@S terbaharu dan periksa output ralat sebelum membuat perubahan lanjut.
+- **Elakkan pendaftaran peranti kedua:** SK@S dahulu memanggil `loginWithPin` dua kali (frontend dan backend), yang boleh menambah peranti baharu lalu menggantikan peranti dipercayai sedia ada. Versi ini menukar token login asal, bukan login semula.
 - Apps Script Web App perlu dipasang oleh akaun yang mempunyai akses ke **kedua-dua spreadsheet** dan folder Drive eviden. `Script Properties` adalah **per projek**, bukan sebahagian daripada fail GitHub.
 - Backend menerima standard daripada helaian `SENARAI STANDARD`. **Kod ini tidak mencipta automatik semua 115 subaspek rasmi** dan tidak menggantikan instrumen Buku SK@S.
 - Muat naik binari 15 MB melalui JSON base64 tertakluk pada had Apps Script sebenar; uji fail besar.
