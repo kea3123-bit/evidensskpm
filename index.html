@@ -611,6 +611,14 @@
                 <input type="file" id="upload-file" class="form-control" onchange="validateFileSize(this)">
               </div>
             </div>
+            <div class="info-strip no-print" style="margin-top:12px">
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+                <input type="checkbox" id="upload-link-sharing" checked style="margin-top:3px;flex-shrink:0">
+                <span><strong>Boleh dilihat oleh sesiapa yang mempunyai pautan (Viewer).</strong>
+                  Hanya untuk fail yang dimuat naik melalui sistem. Nyah tanda jika mengandungi maklumat sulit murid/guru.
+                  Ini tidak berkongsi keseluruhan folder. Perkongsian mungkin disekat oleh polisi Google Workspace sekolah.</span>
+              </label>
+            </div>
 
             <button class="btn-login-full" onclick="submitEviden()" style="margin-top:20px;">
               <i class="fa-solid fa-floppy-disk"></i> Simpan Eviden
@@ -622,7 +630,10 @@
         <div id="module-senarai_eviden" class="module-pane" style="display:none;">
           <div class="page-title-box">
             <h2 class="page-title">Senarai Eviden Penilaian <span class="active-year-txt">2026</span></h2>
-            <button class="btn-login-full no-print" onclick="window.print()" style="width:auto; padding:8px 16px;"><i class="fa-solid fa-print"></i> Cetak Senarai</button>
+            <div class="no-print" style="display:flex;gap:9px;flex-wrap:wrap">
+              <button type="button" class="btn-login-full admin-only" onclick="repairOldEvidenceAccess()" style="width:auto;padding:8px 16px"><i class="fa-solid fa-link"></i> Baiki Akses Fail Lama</button>
+              <button class="btn-login-full" onclick="window.print()" style="width:auto;padding:8px 16px"><i class="fa-solid fa-print"></i> Cetak Senarai</button>
+            </div>
           </div>
           <div class="view-card no-print">
             <div class="form-grid">
@@ -1599,13 +1610,21 @@
           body: JSON.stringify({
             action:"save_eviden", tahun:SYSTEM_BUNDLE.activeYear, pemuatNaik:CURRENT_USER.name,
             standard,aspek,noItem:item,huraian,pdca,jenis,tajuk,catatan,
-            pautanLuar:pautan,fileBase64:base64,fileName,fileMime
+            pautanLuar:pautan,fileBase64:base64,fileName,fileMime,
+            shareAccess:document.getElementById("upload-link-sharing").checked?"link":"private"
           })
         });
         if (!response.ok) throw new Error("HTTP "+response.status);
         const res = await response.json();
         if (res.status !== "success") throw new Error(res.message || "Simpanan tidak berjaya");
-        alert("Eviden disimpan" + (res.id ? " — ID: "+res.id : "") + ". Sila semak akses pautan dalam Senarai Eviden.");
+        const sharingNote=res.accessStatus==="link"?
+          " Akses fail: sesiapa dengan pautan boleh lihat (Viewer).":
+          res.accessStatus==="private"?
+          " Fail kekal private; hanya pengguna dengan kebenaran Google Drive boleh melihatnya.":
+          res.accessStatus==="restricted"?
+          " AMARAN: "+(res.accessWarning||"Polisi Drive menyekat akses melalui pautan."):
+          " Pautan luar kekal menggunakan tetapan perkongsian asal.";
+        alert("Eviden disimpan" + (res.id ? " — ID: "+res.id : "") + "."+sharingNote);
         document.getElementById('upload-tajuk').value="";
         document.getElementById('upload-catatan').value="";
         document.getElementById('upload-pautan').value="";
@@ -1616,6 +1635,43 @@
       } finally { hideLoader(); }
     }
 
+
+    async function repairOldEvidenceAccess() {
+      if (!isPrivilegedUser() || !SPES_AUTH_TOKEN) {
+        alert("Hanya Pentadbir dengan sesi SK@S yang sah boleh membaiki perkongsian fail.");
+        return;
+      }
+      if (!confirm("Baiki akses fail eviden lama? Ini akan memberikan kebenaran 'Anyone with the link — Viewer' kepada fail Drive yang direkodkan dalam EVIDEN dan berada dalam folder induk SK@S sahaja. Fail luaran serta folder lain tidak diubah. Pastikan eviden tidak mengandungi maklumat sensitif sebelum meneruskan.")) return;
+      let offset=0,total=null;
+      const counts={repaired:0,already:0,skipped:0,failed:0};
+      showLoader("Menyemak akses fail eviden lama...");
+      try{
+        do {
+          const response=await spesFetch(SPES_API_URL,{
+            method:"POST",body:JSON.stringify({action:"repair_evidence_access",offset})
+          });
+          if(!response.ok)throw new Error("HTTP "+response.status);
+          const result=await response.json();
+          if(result.status!=="success")throw new Error(result.message||"Pembaikan akses gagal.");
+          if(!(Number(result.nextOffset)>offset) && Number(result.remaining)>0)
+            throw new Error("Pelayan tidak memajukan kedudukan pembaikan.");
+          for(const key of Object.keys(counts))counts[key]+=Number(result[key]||0);
+          offset=Number(result.nextOffset);
+          total=Number(result.total||0);
+          const loader=document.getElementById("loader-title");
+          if(loader)loader.innerText="Menyemak fail lama: "+offset+"/"+total;
+          if(!result.remaining)break;
+        }while(true);
+        alert("Pembaikan akses selesai. Dikongsi dengan pautan: "+counts.repaired+
+          " · Sudah mempunyai akses: "+counts.already+
+          " · Dilangkau (bukan fail SK@S/tiada pautan Drive): "+counts.skipped+
+          " · Gagal / disekat polisi: "+counts.failed+
+          ". Semak fail di Senarai Eviden.");
+      }catch(err){
+        alert("Pembaikan berhenti pada "+offset+"/"+(total??"?")+
+          ": "+(err.message||err)+". Boleh jalankan semula; fail yang sudah dikongsi akan dilangkau.");
+      }finally{hideLoader();}
+    }
     function populateEvidenceFilters() {
       const list=evidenceForActiveYear();
       const stdSelect=document.getElementById('filter-standard');
