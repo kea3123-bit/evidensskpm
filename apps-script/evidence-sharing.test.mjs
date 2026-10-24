@@ -132,6 +132,11 @@ test("Workspace sharing denial does not lose uploaded file or EVIDEN record",()=
 });
 test("repair only managed recorded Drive files, skips external URLs and foreign files",()=>{
  const linked=upload("OldPrivate","private");
+ const legacyFile=makeFile();
+ evidence.appendRow([
+ "LEGACY","2025","GURU",std,"1.1.1",aspect,"","PLAN","FILE","Legacy private file","",
+ legacyFile.getUrl(),"","guru@example.test"
+ ]);
  evidence.appendRow([
  "EXT-1","2026","GURU",std,"1.1.1",aspect,"","PLAN","LINK","External","",
  "https://example.com/non-school-link","", "guru@example.test"
@@ -150,10 +155,11 @@ test("repair only managed recorded Drive files, skips external URLs and foreign 
    if(!out.remaining)break;
  }while(true);
  assert.equal(success,2); // blocked upload + one private old upload
- assert.equal(skipped,2); // external + foreign Drive
+ assert.equal(skipped,4); // 2 intentionally private + external + foreign
  assert.equal(failed,0);
  assert.equal(already,1); // original already-shared upload
- assert.equal(store.get(sandbox.uploadedDriveFileId_(linked.url)).getSharingAccess(),"ANYONE_WITH_LINK");
+ assert.equal(store.get(sandbox.uploadedDriveFileId_(linked.url)).getSharingAccess(),"PRIVATE");
+ assert.equal(legacyFile.getSharingAccess(),"ANYONE_WITH_LINK");
  assert.equal(foreign.getSharingAccess(),"PRIVATE");
  const again=sandbox.repairEvidenceAccess(ss,{offset:0});
  assert.equal(again.repaired,0);
