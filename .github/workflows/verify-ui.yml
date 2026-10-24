@@ -1,7 +1,7 @@
 name: Verify SKAS frontend
 on:
   push:
-    branches: [main, feat/skas-2026-eviden-audit]
+    branches: [main, feat/skas-2026-eviden-audit, feat/apps-script-backend-2026]
   pull_request:
     branches: [main]
 jobs:
@@ -12,4 +12,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node --test tests/skas-smoke.test.mjs
+      - run: node --test tests/skas-smoke.test.mjs apps-script/backend.test.mjs
