@@ -423,6 +423,26 @@
               </table>
             </div>
           </div>
+          <div class="view-card" id="book-reference-panel">
+            <div class="page-title-box">
+              <div>
+                <h3 class="panel-heading">Rujukan Buku SK@S 2024 dan Audit Padanan</h3>
+                <p class="helper-text">38 aspek Standard 1–5 dan 9 aspek Kekuatan Kami; rujukan berdasarkan buku 125 halaman. Huraian ialah ringkasan Kriteria Kritikal pada aras aspek, bukan teks Standard Kualiti setiap subaspek.</p>
+              </div>
+              <button type="button" class="btn-login-full no-print" style="width:auto;padding:9px 14px" onclick="showBookReference()"><i class="fa-solid fa-book-open"></i> Papar Buku & Semak Standard</button>
+            </div>
+            <div id="book-reference-body" style="display:none">
+              <p id="book-reference-summary" class="helper-text"></p>
+              <div class="no-print" style="margin-bottom:10px"><input type="search" id="book-reference-search" class="form-control" placeholder="Cari kod, aspek atau huraian dari buku..." oninput="renderBookReference()"></div>
+              <div class="table-responsive">
+                <table id="book-reference-table">
+                  <thead><tr><th>Kod</th><th>Nama Aspek dalam Buku</th><th>Huraian aras Aspek (ringkasan buku)</th><th>Bil. Subaspek</th><th>Hal. PDF</th><th>Status Senarai Standard</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p class="helper-text">Rekod yang bercanggah kod/nama tidak ditukar secara automatik. Pentadbir boleh menggunakan butang <strong>Cadang Huraian Buku</strong> dalam borang Tambah/Kemas Kini Standard, menyemak dan menyimpannya secara manual.</p>
+            </div>
+          </div>
           <div class="view-card" id="zip-standard-panel">
             <div class="page-title-box">
               <div>
@@ -914,6 +934,7 @@
         renderJawatankuasa();
         renderChecklist();
         renderStandards();
+        if(SKAS_BOOK_DATA && document.getElementById("book-reference-body")?.style.display==="block")renderBookReference();
         renderPPS();
         renderUploadForm();
         renderEvidenTable();
@@ -1098,6 +1119,104 @@
     // -------------------------------------------------------------
     // 2. MODUL SENARAI RUJUKAN STANDARD (PAPARAN & CRUD)
     // -------------------------------------------------------------
+    let SKAS_BOOK_DATA=null;
+    let SKAS_BOOK_PROMISE=null;
+    async function loadBookReference() {
+      if(SKAS_BOOK_DATA)return SKAS_BOOK_DATA;
+      if(!SKAS_BOOK_PROMISE){
+        SKAS_BOOK_PROMISE=fetch("./data/skas-book-reference-2024.json",{cache:"no-store"})
+          .then(res=>{if(!res.ok)throw new Error("Rujukan Buku 2024 tidak dapat dimuat. HTTP "+res.status);return res.json()})
+          .then(data=>{
+            if(!Array.isArray(data.aspects)||data.aspects.length!==38||data.totalSubaspek!==115)
+              throw new Error("Data rujukan buku tidak lengkap (38 aspek / 115 subaspek diperlukan).");
+            SKAS_BOOK_DATA=data;return data;
+          }).catch(err=>{SKAS_BOOK_PROMISE=null;throw err});
+      }
+      return SKAS_BOOK_PROMISE;
+    }
+    function normalizeBookLabel(value) {
+      return String(value||"").toLowerCase()
+        .replace(/^standard\s+\d+(?:\.\d+)*\s*/i,"")
+        .replace(/[^a-z0-9]+/g," ").trim();
+    }
+    function bookRowMatch(ref,row) {
+      if(!ref||!row)return false;
+      const code=String(row["No Item"]||"").trim();
+      return (code===ref.code||code.startsWith(ref.code+".")) &&
+        normalizeBookLabel(row.Aspek)===normalizeBookLabel(ref.name);
+    }
+    function bookMatchForRow(row) {
+      return SKAS_BOOK_DATA?.aspects.find(ref=>bookRowMatch(ref,row))||null;
+    }
+    function bookReferenceState(ref,rows) {
+      const candidates=(rows||[]).filter(row=>{
+        const code=String(row["No Item"]||"").trim();
+        return code===ref.code||code.startsWith(ref.code+".");
+      });
+      if(!candidates.length)return "TIADA DALAM SENARAI";
+      return candidates.some(row=>bookRowMatch(ref,row))?"SEPADAN":"KOD SAMA, ASPEK BERCANGGAH";
+    }
+    async function showBookReference(){
+      const host=document.getElementById("book-reference-body");
+      if(!host)return;
+      if(host.style.display!=="none"){host.style.display="none";return;}
+      try{
+        await loadBookReference();
+        host.style.display="block";
+        renderBookReference();
+      }catch(err){alert("Gagal memuat Rujukan Buku SK@S: "+(err.message||err));}
+    }
+    function renderBookReference(){
+      if(!SKAS_BOOK_DATA||!SYSTEM_BUNDLE)return;
+      const records=SYSTEM_BUNDLE.standards||[];
+      const q=normalizeSearch(document.getElementById("book-reference-search")?.value||"");
+      const states={matched:0,missing:0,mismatch:0};
+      for(const ref of SKAS_BOOK_DATA.aspects){
+        const status=bookReferenceState(ref,records);
+        if(status==="SEPADAN")states.matched++;
+        else if(status==="TIADA DALAM SENARAI")states.missing++;
+        else states.mismatch++;
+      }
+      const rows=SKAS_BOOK_DATA.aspects.filter(ref=>!q ||
+        normalizeSearch([ref.code,ref.name,ref.description].join(" ")).includes(q));
+      document.querySelector("#book-reference-table tbody").innerHTML=
+        rows.map(ref=>{
+          const status=bookReferenceState(ref,records);
+          return '<tr><td><b>'+escapeHtml(ref.code)+'</b></td><td>'+
+            escapeHtml(ref.name)+'</td><td>'+escapeHtml(ref.description)+
+            '</td><td>'+ref.subaspek+'</td><td>PDF '+ref.pdfPage+
+            '</td><td>'+escapeHtml(status)+'</td></tr>';
+        }).join("") || '<tr><td colspan="6">Tiada padanan carian.</td></tr>';
+      const strength=SKAS_BOOK_DATA.strengths||[];
+      document.getElementById("book-reference-summary").textContent=
+        "Buku 2024: "+SKAS_BOOK_DATA.totalSubaspek+" subaspek keseluruhan; 38 aspek Standard, "+
+        strength.length+" aspek Kekuatan Kami (39 subaspek). Semakan kod/nama terhadap data semasa: "+
+        states.matched+" sepadan, "+states.missing+" belum ada, "+states.mismatch+
+        " bercanggah. Status ini berasaskan rekod yang boleh diakses melalui SK@S, bukan pengesahan penskoran.";
+    }
+    async function fillBookSummary(formMode){
+      const key=formMode==="edit"?"std-edit-":"std-add-";
+      const inputCode=document.getElementById(key+"item");
+      const inputAspect=document.getElementById(key+"aspek");
+      const inputDesc=document.getElementById(key+"huraian");
+      if(!inputCode||!inputAspect||!inputDesc)return;
+      try{
+        await loadBookReference();
+        const row={"No Item":inputCode.value,Aspek:inputAspect.value};
+        const ref=bookMatchForRow(row);
+        if(!ref){
+          alert("Kod dan nama aspek belum sepadan dengan Buku 2024. Jangan isi huraian automatik kerana terdapat konflik kod dalam ZIP, khususnya Standard 3.3, 4 dan 5. Buka Rujukan Buku untuk semak.");
+          return;
+        }
+        const suggested="Ringkasan Kriteria Kritikal aras aspek (Buku SK@S 2024, halaman PDF "+ref.pdfPage+"): "+ref.description;
+        const old=String(inputDesc.value||"").trim();
+        const placeholder=!old||/Tiada huraian dalam ZIP|Sila lengkapkan berdasarkan instrumen/i.test(old);
+        if(!placeholder && !confirm("Huraian sedia ada akan digantikan dengan ringkasan aras aspek daripada Buku 2024. Teruskan?"))return;
+        inputDesc.value=suggested;
+        alert("Cadangan huraian dimasukkan ke borang. Semak dengan halaman PDF "+ref.pdfPage+" sebelum tekan Simpan. Ini bukan Standard Kualiti individu.");
+      }catch(err){alert("Tidak dapat mendapatkan huraian buku: "+(err.message||err));}
+    }
+
     function renderStandards() {
       const tbody = document.querySelector('#standard-table tbody');
       const list = SYSTEM_BUNDLE.standards || [];
@@ -1153,6 +1272,7 @@
           <div class="form-group">
             <label>Huraian / Deskripsi Penilaian *</label>
             <textarea id="std-add-huraian" class="form-control" placeholder="Penerangan terperinci item..." required></textarea>
+            <button type="button" class="btn-action-icon" style="margin-top:9px;width:auto;padding:9px" onclick="fillBookSummary('add')"><i class="fa-solid fa-book-open"></i> Cadang Huraian Buku 2024</button>
           </div>
           <button type="submit" class="btn-login-full" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Simpan Standard</button>
         </form>
@@ -1178,6 +1298,7 @@
           <div class="form-group">
             <label>Huraian *</label>
             <textarea id="std-edit-huraian" class="form-control" required>${escapeHtml(hur)}</textarea>
+            <button type="button" class="btn-action-icon" style="margin-top:9px;width:auto;padding:9px" onclick="fillBookSummary('edit')"><i class="fa-solid fa-book-open"></i> Cadang Huraian Buku 2024</button>
           </div>
           <button type="submit" class="btn-login-full" style="margin-top:15px;"><i class="fa-solid fa-floppy-disk"></i> Kemas Kini Standard</button>
         </form>
