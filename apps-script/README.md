@@ -84,3 +84,27 @@ node --test tests/skas-smoke.test.mjs apps-script/backend.test.mjs
 ```
 
 Rujukan audit asal: [SKAS_2026_AUDIT.md](../docs/SKAS_2026_AUDIT.md).
+
+## 6. Semak sambungan e-Keberadaan tanpa ganggu peranti
+
+**Untuk ZIP `apps-script(1).zip` yang anda berikan:** struktur dan kandungan fail adalah **serupa dengan ZIP `apps-script.zip` sebelumnya** (24 fail `.gs`, semua lulus pemeriksaan sintaks). Versi modul semasa menyokong:
+
+- `loginWithPin(email,pin,clientInfo,deviceCredential)`: frontend SK@S memanggil sekali.
+- `getBootstrapData(token)`: backend SK@S mengesahkan token akses sedia ada; ia menggunakan `requireSessionUser_` dan tidak mendaftar peranti baharu.
+- `Bridges.gs`: `perf-burst` membalas JSON, membenarkan `getBootstrapData`, dan menerima origin lalai `https://kea3123-bit.github.io`.
+- `PENGGUNA`: lajur `Aktif`, `Nama`, `Emel`, `Pentadbir` sepadan dengan kod SK@S.
+
+**Jangan tambah 24 fail e-Keberadaan ke dalam projek SK@S.** Kedua-dua Apps Script adalah projek berasingan.
+
+### Diagnostik tanpa PIN
+
+1. Dalam projek **Apps Script SK@S**, tambah fail baharu bernama `Diagnostics` daripada `apps-script/Diagnostics.gs` (atau gunakan `clasp` jika anda sudah sync repo).
+2. Pastikan `SPES_DB_ID`, `EKEBERADAAN_DB_ID`, `EKEBERADAAN_WEB_APP_URL`, `AUTH_BRIDGE_ORIGIN` sudah ditetapkan dalam Script Properties **SK@S**.
+3. Dalam editor Apps Script SK@S, pilih fungsi `diagnoseSKASConnection` dan klik **Run**.
+4. Buka **Execution log**. Cari `ok:true` dan semua `checks[].ok:true`. Tiada PIN, token, ID folder, atau URL penuh akan muncul dalam log. Skrip memeriksa sambungan bacaan ke helaian dan menghantar `__ping__` ke bridge e-Keberadaan sahaja.
+5. Jika `EKE_BRIDGE_PING` gagal kerana origin, semak bahawa tetapan `EK_PAGES_ORIGINS` atau `EK_PAGES_ORIGIN` dalam projek e-Keberadaan yang sedang deploy membenarkan origin `https://kea3123-bit.github.io`. *Jangan ubah e-Keberadaan kecuali benar-benar perlu;* versi ZIP menyertakan origin ini dalam nilai lalai.
+6. Selepas diagnostik berjaya, uji login sebenar seorang pengguna di SK@S pada deployment ujian. Diagnostik `__ping__` tidak dapat mengesahkan token pengguna dan **tidak menjamin keseluruhan login berjaya**.
+
+### Nota asal ZIP
+
+`getBootstrapData` menjalankan logik e-Keberadaan termasuk semakan sesi, penyediaan sejarah jadual asas dan semakan trigger perkhidmatan Keberadaan. Ia **bukan** fungsi baca-tanpa-kesan sampingan sepenuhnya. Diagnostik di atas sengaja menggunakan `__ping__` sahaja. Login sebenar SK@S masih menggunakan `getBootstrapData` kerana ia satu-satunya kaedah bootstrap token yang tersedia tanpa mengubah kod e-Keberadaan.
