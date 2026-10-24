@@ -716,27 +716,35 @@
       }
       return fetch(url,next);
     }
-    async function establishBackendSession(email,pin) {
+    async function establishBackendSession(email,ekeToken) {
+      // e-Keberadaan has ALREADY authenticated the PIN and returned its signed
+      // session token. Exchange that token; NEVER call loginWithPin a second time.
+      if (!ekeToken || typeof ekeToken!=="string") {
+        throw new Error("e-Keberadaan tidak memberi token sesi. Log masuk semula.");
+      }
       const response=await fetch(SPES_API_URL,{
-        method:"POST",body:JSON.stringify({action:"auth_login",email:email,pin:pin})
+        method:"POST",body:JSON.stringify({action:"auth_exchange",email,ekeToken})
       });
       if (!response.ok) throw new Error("Backend SK@S HTTP "+response.status);
       const data=await response.json();
       if (data.status==="success" && data.authToken && data.user) {
-        if(String(data.user.email||"").toLowerCase()!==String(email).toLowerCase())throw new Error("Identiti antara sistem tidak sepadan.");
+        if(String(data.user.email||"").toLowerCase()!==String(email).toLowerCase()) throw new Error("Identiti antara sistem tidak sepadan.");
         SPES_AUTH_TOKEN=data.authToken;
         SECURE_BACKEND=true;
         CURRENT_USER={email:data.user.email,name:data.user.name,role:data.user.role};
         return;
       }
-      // Legacy v2 backend does not support auth_login. Allow staged deployment
-      // until Apps Script v3 is deployed by the school.
+      // Only an unmodified v2 backend lacks authenticated actions. This is a
+      // temporary compatibility mode; do not interpret v3 UNKNOWN_ACTION as v2.
       if (data.status==="error" && !data.code && data.message==="Tindakan tidak sah.") {
         SPES_AUTH_TOKEN="";
         SECURE_BACKEND=false;
         return;
       }
-      throw new Error("Sesi backend gagal: "+(data.message||"Semak konfigurasi Apps Script v3."));
+      if(data.code==="UNKNOWN_ACTION" || data.code==="USE_AUTH_EXCHANGE"){
+        throw new Error("Backend SK@S belum menggunakan Code.gs terkini. Kemas kini Apps Script SK@S sahaja; e-Keberadaan tidak perlu diubah.");
+      }
+      throw new Error("Pengesahan sesi SK@S gagal: "+(data.message||"Semak konfigurasi Apps Script SK@S."));
     }
     let EVIDENCE_ROWS = [];
     let LAST_DATA_ERROR = "";
@@ -831,7 +839,7 @@
             name: authBoot.user.name,
             role: authBoot.user.isAdmin ? "ADMIN" : "USER"
           };
-          await establishBackendSession(loginEmail,pin);
+          await establishBackendSession(loginEmail,result.value.token);
           document.getElementById('loginPin').value="";
           if (!await loadAppBundle()) throw new Error(LAST_DATA_ERROR || "Data SK@S tidak dapat dimuatkan.");
           document.getElementById('loginPage').classList.add('hidden');
