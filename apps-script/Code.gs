@@ -464,7 +464,7 @@ function logout_(token){
 function authExchange_(p) {
   var eToken=String(p.ekeToken||"").trim();
   var expectedEmail=String(p.email||"").trim().toLowerCase();
-  if(!eToken || eToken.length>4096 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(expectedEmail)) {
+  if(!eToken || eToken.length>4096 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(expectedEmail)) {
     return {status:"error",code:"BAD_REQUEST",message:"Sesi e-Keberadaan atau emel tidak sah."};
   }
   var id="spes_exchange_"+Utilities.getUuid();
