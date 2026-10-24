@@ -44,7 +44,8 @@ const primary={
 };
 let uuidCounter=0;
 let bridgeSuccess=true;
-let lastBridgeEmail="";
+let lastBridgeMethod="";
+let lastBridgeToken="";
 const sandbox={
  console,JSON,Date,Number,String,Boolean,Object,Array,Error,Math,
  Logger:{log(){}},
@@ -67,16 +68,19 @@ const sandbox={
  },
  UrlFetchApp:{fetch(url,opts){
    const bridge=JSON.parse(opts.payload.payload);
-   lastBridgeEmail=bridge.args[0];
+   lastBridgeMethod=bridge.method;
+   lastBridgeToken=bridge.args[0];
+   const email=String(lastBridgeToken).replace(/^signed:/,"");
    return {getResponseCode:()=>200,getContentText:()=>JSON.stringify({
-     ok:bridgeSuccess,value:{ok:bridgeSuccess,boot:{user:{email:bridge.args[0]}}}
+     type:"EK_BRIDGE_RESULT",id:bridge.id,channel:bridge.channel,
+     ok:bridgeSuccess,value:{user:{email,active:true,mustChangePassword:false}}
    })};
  }}
 };
 vm.createContext(sandbox);
 new vm.Script(code,{filename:"Code.gs"}).runInContext(sandbox);
 const request=p=>sandbox.handleAction(p);
-const login=email=>request({action:"auth_login",email,pin:"123456"});
+const login=email=>request({action:"auth_exchange",email,ekeToken:"signed:"+email});
 const entry={action:"save_eviden",tahun:"2099",pemuatNaik:"PENYAMAR",
   standard:"STANDARD 1: KEPIMPINAN",noItem:"1.1.1",aspek:"Standard 1.1 PGB Sebagai Peneraju",
   huraian:"Penerangan item",pdca:"PLAN,DO",jenis:"LAPORAN",tajuk:"Laporan eviden",catatan:"sah",
@@ -87,13 +91,16 @@ test("without a server session every data action is denied",()=>{
   assert.equal(request({action:"delete_eviden",id:"x"}).code,"AUTH_REQUIRED");
   assert.equal(request({action:"populate_master"}).code,"AUTH_REQUIRED");
 });
-test("PIN must be verified by e-Keberadaan bridge before issuing a token",()=>{
+test("an existing e-Keberadaan session is verified without a second PIN login",()=>{
   bridgeSuccess=false;
-  assert.equal(login("guru@moe-dl.edu.my").code,"INVALID_CREDENTIALS");
+  assert.equal(login("guru@moe-dl.edu.my").code,"EKE_SESSION_REJECTED");
   bridgeSuccess=true;
   assert.equal(login("inactive@moe-dl.edu.my").code,"FORBIDDEN");
   assert.equal(login("guru@moe-dl.edu.my").status,"success");
-  assert.equal(lastBridgeEmail,"guru@moe-dl.edu.my");
+  assert.equal(lastBridgeMethod,"getBootstrapData");
+  assert.equal(lastBridgeToken,"signed:guru@moe-dl.edu.my");
+  assert.equal(request({action:"auth_login",email:"guru@moe-dl.edu.my",pin:"123456"}).code,"USE_AUTH_EXCHANGE");
+  assert.equal(request({action:"auth_exchange",email:"admin@moe-dl.edu.my",ekeToken:"signed:guru@moe-dl.edu.my"}).code,"IDENTITY_MISMATCH");
 });
 const guru=login("guru@moe-dl.edu.my").authToken;
 const admin=login("admin@moe-dl.edu.my").authToken;
