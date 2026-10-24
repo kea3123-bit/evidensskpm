@@ -426,18 +426,18 @@
           <div class="view-card" id="zip-standard-panel">
             <div class="page-title-box">
               <div>
-                <h3 class="panel-heading">Standard daripada ZIP SKAS_MASTER_FOLDER_2026</h3>
-                <p class="helper-text">Sumber: ZIP yang dimuat naik (80 laluan folder dalam 12 kategori). Hanya laluan berkod dijadikan item Standard; kategori pengurusan dan sokongan kekal sebagai folder rujukan, bukan standard rasmi baharu.</p>
+                <h3 class="panel-heading">Senarai Standard / Folder — Hierarki Asal ZIP</h3>
+                <p class="helper-text">Struktur asal ZIP dipaparkan mengikut aras sebenar: 1 induk, 12 kategori, 71 folder aras ketiga dan 10 subfolder aras keempat (94 folder semuanya). Item berkod menjadi aspek Standard; folder anak kekal sebagai subfolder.</p>
               </div>
               <div class="no-print admin-only" style="display:flex;gap:8px;flex-wrap:wrap">
-                <button type="button" class="btn-login-full" style="width:auto;padding:9px 14px" onclick="importZipStandards()"><i class="fa-solid fa-file-import"></i> Import Item Standard ZIP</button>
+                <button type="button" class="btn-login-full" style="width:auto;padding:9px 14px" onclick="importZipStandards()"><i class="fa-solid fa-file-import"></i> Import Aspek Standard ZIP</button>
                 <button type="button" class="btn-login-full" style="width:auto;padding:9px 14px" onclick="buildZipDriveFolders()"><i class="fa-solid fa-folder-plus"></i> Bina Folder ZIP di Drive</button>
               </div>
             </div>
             <p id="zip-catalog-summary" class="helper-text"></p>
-            <div class="info-strip"><strong>Nota:</strong> ZIP hanya mengandungi folder .keep. Ia bukan senarai penuh subaspek rasmi; huraian item import ditandakan untuk dilengkapkan. Data standard sedia ada tidak akan ditimpa.</div>
+            <div class="info-strip"><strong>Nota:</strong> ZIP mengandungi 80 laluan .keep yang mewakili 94 folder berhierarki. Kod 3.1.2 ialah satu aspek dengan 10 anak folder mata pelajaran. Semua nama asal dipelihara; data sedia ada tidak ditimpa.</div>
             <div class="no-print">
-              <input id="zip-catalog-search" class="form-control" type="search" placeholder="Cari dalam ZIP: kod standard, aspek, mata pelajaran, folder..." oninput="renderZipCatalog()" style="margin:10px 0">
+              <input id="zip-catalog-search" class="form-control" type="search" placeholder="Cari nama folder, subfolder, kod aspek atau mata pelajaran..." oninput="renderZipCatalog()" style="margin:10px 0">
             </div>
             <div id="zip-catalog"></div>
           </div>
@@ -1972,34 +1972,81 @@
       return [...new Set([...defaults,...zip,...existing])].filter(Boolean).map(name=>
         '<option value="'+escapeAttr(name)+'">'+escapeHtml(name)+'</option>').join("");
     }
+    // Folder inventory from the uploaded ZIP. This is a tree of 94 physical
+    // folders (1 root + 12 groups + 71 level-3 + 10 level-4), not 80 flat rows.
+    function buildZipFolderTree(groups) {
+      const root={name:"SKAS_MASTER_FOLDER_2026",path:"SKAS_MASTER_FOLDER_2026",level:1,children:[]};
+      const addChild=(parent,name)=>{
+        let child=parent.children.find(x=>x.name===name);
+        if(!child){
+          child={name,path:parent.path+"/"+name,level:parent.level+1,children:[]};
+          parent.children.push(child);
+        }
+        return child;
+      };
+      for(const group of groups||[]){
+        const parent=addChild(root,group.name);
+        for(const relative of group.paths||[]){
+          let cursor=parent;
+          for(const part of String(relative).split("/").filter(Boolean))
+            cursor=addChild(cursor,part);
+        }
+      }
+      const sort=(node)=>{
+        node.children.sort((a,b)=>a.name.localeCompare(b.name,"ms",{numeric:true}));
+        node.children.forEach(sort);
+      };
+      sort(root);
+      return root;
+    }
+    function flattenZipFolderTree(root) {
+      return [root,...(root.children||[]).flatMap(flattenZipFolderTree)];
+    }
     function renderZipCatalog() {
       const host=document.getElementById("zip-catalog");
       if(!host || !SYSTEM_BUNDLE)return;
-      const groups=SYSTEM_BUNDLE.zipCatalog||[];
-      const q=normalizeSearch(document.getElementById("zip-catalog-search")?.value||"");
-      let shown=0, standardCount=0;
-      const importedPaths=new Set((SYSTEM_BUNDLE.standards||[]).map(s=>String(s["ZIP Path"]||"")).filter(Boolean));
-      const markup=groups.map(group=>{
-        const items=(group.paths||[]).filter(path=>!q||normalizeSearch(group.name+"/"+path).includes(q));
-        if(!items.length)return "";
-        shown+=items.length;
-        const isStd=zipGroupIsStandard(group.name);
-        if(isStd)standardCount+=items.filter(x=>/^\d+(?:\.\d+)+_/.test(x)).length;
-        return '<details class="folder-group" '+(q?'open':'')+'><summary>'+
-          '<i class="fa-solid fa-'+(isStd?'book':'folder')+'"></i> '+
-          escapeHtml(group.name)+' <small>('+items.length+' laluan)</small></summary><div class="folder-list">'+
-          items.map(path=>{
-            const isItem=isStd&&/^\d+(?:\.\d+)+_/.test(path);
-            const imported=importedPaths.has(group.name+"/"+path);
-            return '<div class="folder-path"><span>'+escapeHtml(path)+'</span><small>'+
-              (isItem?(imported?'Dalam Senarai Standard':'Rujukan ZIP — belum import'):'Folder sokongan')+
-              '</small></div>';
-          }).join("")+'</div></details>';
-      }).filter(Boolean);
-      host.innerHTML=markup.join("")||'<p class="helper-text">Tiada padanan carian.</p>';
-      document.getElementById("zip-catalog-summary").textContent=
-        shown+" daripada 80 laluan folder dipaparkan · "+standardCount+
-        " laluan item Standard dalam paparan. Sebanyak 39 laluan Standard tersedia untuk import daripada ZIP.";
+      const root=buildZipFolderTree(SYSTEM_BUNDLE.zipCatalog||[]);
+      const tally=flattenZipFolderTree(root);
+      const search=normalizeSearch(document.getElementById("zip-catalog-search")?.value||"");
+      const references=new Map((SYSTEM_BUNDLE.standards||[]).
+        filter(row=>row["ZIP Path"]).
+        map(row=>[String(row["ZIP Path"]),row]));
+      const matches=(node)=>{
+        return !search || normalizeSearch(node.path+" "+node.name).includes(search) ||
+          node.children.some(matches);
+      };
+      let visible=0;
+      const renderNode=(node)=>{
+        if(!matches(node))return "";
+        visible++;
+        const name=escapeHtml(node.name);
+        const isStandardGroup=node.level===2&&zipGroupIsStandard(node.name);
+        const isAspect=node.level===3&&
+          zipGroupIsStandard(node.path.split("/")[1])&&/^\d+(?:\.\d+)+_/.test(node.name);
+        const isSubject=node.level===4;
+        const record=references.get(node.path.slice(root.path.length+1));
+        const href=record?safeHref(record["Folder URL"]):"";
+        const info=record?' <small>· Dalam Senarai Standard</small>':
+          isAspect?' <small>· Aspek ZIP</small>':
+          isSubject?' <small>· Subfolder mata pelajaran</small>':"";
+        const open=search?' open':'';
+        const link=href?' <a href="'+escapeAttr(href)+'" target="_blank" rel="noopener noreferrer" title="Buka folder Google Drive">Buka Drive <i class="fa-solid fa-arrow-up-right-from-square"></i></a>':"";
+        const title='<i class="fa-'+(node.level===1||isStandardGroup?'solid':'regular')+
+          ' fa-folder"></i> '+name+info+link;
+        if(!node.children.length) {
+          return '<div class="folder-path" style="margin:5px 0 5px 18px">'+title+'</div>';
+        }
+        return '<details class="folder-group"'+open+'><summary>'+title+
+          ' <small>('+node.children.length+' anak)</small></summary>'+
+          '<div style="padding:0 10px 10px 18px">'+node.children.map(renderNode).join("")+'</div></details>';
+      };
+      host.innerHTML=renderNode(root)||'<p class="helper-text">Tiada padanan carian.</p>';
+      const levels=tally.reduce((count,node)=>{count[node.level]=(count[node.level]||0)+1;return count;},{});
+      document.getElementById("zip-catalog-summary").textContent =
+        visible+" / "+tally.length+" folder dipaparkan · "+(levels[1]||0)+
+        " induk · "+(levels[2]||0)+" kategori · "+(levels[3]||0)+
+        " folder aras 3 · "+(levels[4]||0)+
+        " subfolder aras 4 · 80 laluan .keep ZIP.";
     }
     let ZIP_BATCH_BUSY=false;
     async function runZipBatch(action,total,subject) {
@@ -2031,7 +2078,7 @@
       }finally{ZIP_BATCH_BUSY=false;hideLoader();}
     }
     async function importZipStandards() {
-      await runZipBatch("import_zip_standards",39,"Import 39 item Standard daripada ZIP");
+      await runZipBatch("import_zip_standards",30,"Import 30 aspek Standard daripada ZIP");
     }
     async function buildZipDriveFolders() {
       await runZipBatch("sync_zip_master_folders",80,"Bina semua 80 folder daripada ZIP di Google Drive");

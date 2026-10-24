@@ -65,26 +65,37 @@ function skasZipFolders_() {
   });
 }
 function skasZipStandardEntries_() {
-  var entries=[];
+  // Import the actual coded aspect FOLDERS, not a record per .keep leaf path.
+  // For example 3.1.2 has 10 subject subfolders, but ONE coded parent.
+  var entries=[],seen={};
   skasZipFolders_().forEach(function(group) {
-    var groupMatch=group.name.match(/^0[1-7]_STANDARD (\d+(?:\.\d+)?)_(.*)$/);
-    if(!groupMatch)return;
-    var standard="STANDARD "+groupMatch[1]+": "+groupMatch[2];
+    var match=group.name.match(/^0[1-7]_STANDARD (\d+(?:\.\d+)?)_(.*)$/);
+    if(!match)return;
+    var standard="STANDARD "+match[1]+": "+match[2];
     group.paths.forEach(function(relative) {
-      var parts=relative.split("/");
-      var match=parts[0].match(/^(\d+(?:\.\d+)+)_(.*)$/);
-      if(!match)return; // Evidens and PAJSK are folders, not Standard items.
-      var aspect=match[2]+(parts.length>1?" / "+parts.slice(1).join(" / "):"");
-      var path=group.name+"/"+relative;
-      entries.push({standard:standard,noItem:match[1],aspek:aspect,
+      var first=relative.split("/")[0];
+      var item=first.match(/^(\d+(?:\.\d+)+)_(.*)$/);
+      if(!item)return;
+      var zipPath=group.name+"/"+first;
+      if(seen[zipPath])return;
+      seen[zipPath]=true;
+      entries.push({
+        standard:standard,noItem:item[1],aspek:item[2],
         huraian:"Tiada huraian dalam ZIP. Sila lengkapkan berdasarkan instrumen SK@S.",
-        zipPath:path});
+        zipPath:zipPath
+      });
     });
   });
   return entries;
 }
 function isKnownZipPath_(path){
-  return skasZipFolders_().some(function(g){return g.paths.some(function(sub){return g.name+"/"+sub===path;});});
+  // An explicit path in the ZIP OR its existing ancestor folder.
+  return skasZipFolders_().some(function(group) {
+    return group.paths.some(function(sub){
+      var leaf=group.name+"/"+sub;
+      return leaf===path || leaf.indexOf(path+"/")===0;
+    });
+  });
 }
 function createZipPathFolder_(ss,zipPath){
   if(!isKnownZipPath_(zipPath))throw new Error("Laluan folder tidak wujud dalam ZIP induk yang dibekalkan.");
@@ -95,7 +106,7 @@ function createZipPathFolder_(ss,zipPath){
   zipPath.split("/").forEach(function(part){cursor=getOrCreateChildFolder_(cursor,part);});
   return {id:cursor.getId(),url:cursor.getUrl()};
 }
-/** Import 39 code-bearing ZIP paths into SENARAI STANDARD, 15 per call.
+/** Import 30 coded aspect folders from ZIP into SENARAI STANDARD, 15 per call.
  * Non-code folders remain in the Standard module's folder reference catalog.
  * Never overwrite school-authored rows.
  */
@@ -142,13 +153,19 @@ function syncZipMasterFolders(ss,p){
   rows.forEach(function(r,i){if(i>0&&r[6])rowByZipPath[String(r[6])]=i+1;});
   for(var i=start;i<end;i++){
     var path=folders[i],folder=createZipPathFolder_(ss,path);
-    var targetRow=rowByZipPath[path];
-    if(targetRow){
+    // Link the row for an ancestor (e.g. 3.1.2), as well as leaf rows
+    // from a previous import, without deleting or renaming those rows.
+    var parts=path.split("/");
+    for(var depth=2;depth<=parts.length;depth++){
+      var ancestor=parts.slice(0,depth).join("/");
+      var targetRow=rowByZipPath[ancestor];
+      if(!targetRow)continue;
       var existing=rows[targetRow-1];
-      if(!existing[4]||!existing[5]){
-        sh.getRange(targetRow,5,1,2).setValues([[folder.id,folder.url]]);
-        linked++;
-      }
+      if(existing[4]&&existing[5])continue;
+      var actual=ancestor===path?folder:createZipPathFolder_(ss,ancestor);
+      sh.getRange(targetRow,5,1,2).setValues([[actual.id,actual.url]]);
+      existing[4]=actual.id;existing[5]=actual.url;
+      linked++;
     }
     processed++;
   }
