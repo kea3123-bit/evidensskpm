@@ -133,6 +133,8 @@ test("full ZIP Drive folder generation covers supporting and Standard folders, r
  assert.ok(archive.children.get("00_PENGURUSAN SK@S").children.get("03_Jawatankuasa SK@S"));
  assert.ok(archive.children.get("04_STANDARD 3.2_KOKURIKULUM").children.get("PAJSK"));
  assert.ok(archive.children.get("11_PEMANTAUAN & PENAMBAHBAIKAN").children.get("Pelan Intervensi"));
+ assert.equal(standards.rows.slice(3).filter(r=>r[6] && r[4] && r[5]).length,39,
+   "All imported Standard ZIP rows must link to their actual Drive folders.");
  const count=folderMap.size;offset=0;
  do{const r=sandbox.syncZipMasterFolders(ss,{offset});offset=r.nextOffset;}while(offset<80);
  assert.equal(folderMap.size,count);
