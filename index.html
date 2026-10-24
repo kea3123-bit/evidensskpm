@@ -855,7 +855,13 @@
       document.getElementById('bar-user-role').innerText = CURRENT_USER.role;
 
       const isAdmin = isPrivilegedUser();
-      document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (el.classList.contains('module-pane')) {
+          if (!isAdmin) el.style.display = 'none';
+        } else {
+          el.style.display = isAdmin ? '' : 'none';
+        }
+      });
 
       if (isAdmin) {
         document.getElementById('set-tahun').value = SYSTEM_BUNDLE.activeYear || "";
