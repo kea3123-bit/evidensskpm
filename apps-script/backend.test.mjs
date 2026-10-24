@@ -140,3 +140,11 @@ test("a deactivated account loses access on subsequent requests",()=>{
   assert.equal(request({action:"get_bundle",authToken:guru}).code,"AUTH_REQUIRED");
   userRows[idx][3]=true;
 });
+
+test("backend version is readable without login but school data remains protected",()=>{
+  const v=request({action:"get_version"});
+  assert.equal(v.status,"success");
+  assert.equal(v.authMode,"auth_exchange");
+  assert.equal(v.version,"3.1");
+  assert.equal(request({action:"get_bundle"}).code,"AUTH_REQUIRED");
+});
