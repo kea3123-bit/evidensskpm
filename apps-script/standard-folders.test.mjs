@@ -83,6 +83,21 @@ test("ZIP has 80 .keep paths in 12 groups and 30 distinct coded Standard aspects
  const groups=sandbox.skasZipFolders_();
  assert.equal(groups.length,12);
  assert.equal(groups.reduce((n,g)=>n+g.paths.length,0),80);
+ const actualFolders=new Set(["SKAS_MASTER_FOLDER_2026"]);
+ for(const group of groups){
+   let top="SKAS_MASTER_FOLDER_2026/"+group.name;
+   actualFolders.add(top);
+   for(const relative of group.paths){
+     for(const part of relative.split("/")){
+       top+="/"+part;
+       actualFolders.add(top);
+     }
+     top="SKAS_MASTER_FOLDER_2026/"+group.name;
+   }
+ }
+ assert.equal(actualFolders.size,94,"Physical ZIP folder tally must be 94, not 80 .keep leaf paths.");
+ assert.equal([...actualFolders].filter(p=>p.split("/").length===4).length,10);
+
  const records=sandbox.skasZipStandardEntries_();
  assert.equal(records.length,30);
  assert.equal(records.filter(x=>x.noItem==="3.1.2").length,1);
@@ -140,4 +155,27 @@ test("full ZIP Drive folder generation covers supporting and Standard folders, r
  const count=folderMap.size;offset=0;
  do{const r=sandbox.syncZipMasterFolders(ss,{offset});offset=r.nextOffset;}while(offset<80);
  assert.equal(folderMap.size,count);
+});
+
+test("previous 3.1.2 child records can be preserved and linked without deletion",()=>{
+ const oldPath="03_STANDARD 3.1_KURIKULUM/3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu";
+ const previousCount=standards.rows.length;
+ standards.appendRow([
+   "STANDARD 3.1: KURIKULUM","3.1.2","Pengurusan Mata Pelajaran / Bahasa Melayu",
+   "Legacy child record: retain for existing evidence","","",oldPath
+ ]);
+ assert.equal(standards.rows.length,previousCount+1);
+ let offset=0;
+ do {
+   const r=sandbox.syncZipMasterFolders(ss,{offset});
+   assert.equal(r.status,"success");
+   offset=r.nextOffset;
+ }while(offset<80);
+ const record=standards.rows[standards.rows.length-1];
+ assert.equal(record[6],oldPath);
+ assert.ok(record[4]&&record[5]);
+ const parent=standards.rows.find(r=>r[6]==="03_STANDARD 3.1_KURIKULUM/3.1.2_Pengurusan Mata Pelajaran");
+ assert.ok(parent&&parent[4]);
+ assert.notEqual(record[4],parent[4]);
+ assert.equal(standards.rows.length,previousCount+1);
 });
