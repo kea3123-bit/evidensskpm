@@ -108,3 +108,13 @@ Rujukan audit asal: [SKAS_2026_AUDIT.md](../docs/SKAS_2026_AUDIT.md).
 ### Nota asal ZIP
 
 `getBootstrapData` menjalankan logik e-Keberadaan termasuk semakan sesi, penyediaan sejarah jadual asas dan semakan trigger perkhidmatan Keberadaan. Ia **bukan** fungsi baca-tanpa-kesan sampingan sepenuhnya. Diagnostik di atas sengaja menggunakan `__ping__` sahaja. Login sebenar SK@S masih menggunakan `getBootstrapData` kerana ia satu-satunya kaedah bootstrap token yang tersedia tanpa mengubah kod e-Keberadaan.
+
+## 7. Ralat “Sesi tidak sah atau tamat” semasa login SK@S
+
+Sekiranya frontend telah diset kepada `auth_exchange` tetapi Apps Script **SK@S** yang sedang deploy masih menggunakan `auth_login` (kod sebelum PR #3), tindakan `auth_exchange` akan jatuh ke `verifySession_` pada backend lama dan memulangkan `AUTH_REQUIRED` / “Sesi tidak sah atau tamat”. Ini **bukan semestinya tanda PIN atau sesi e-Keberadaan gagal**; ia adalah **versi frontend/backend tidak sepadan**.
+
+Semak fail `Code.gs` projek **SK@S** (BUKAN projek e-Keberadaan): ia mesti mengandungi `if (action==="auth_exchange") return authExchange_(params);` dan fungsi `authExchange_(p)`. Salin kod `apps-script/Code.gs` terkini, simpan, kemudian **Deploy > Manage deployments > Edit > New version > Deploy** (atau redeploy endpoint `/exec` yang sedang digunakan oleh frontend). Semak bahawa URL `SPES_API_URL` dalam frontend menuju ke deployment itu, bukan deployment lama.
+
+Dalam versi baharu, semak halaman endpoint SK@S `/exec` melalui pelayar: ia memulangkan JSON dengan `version:"3.1"` dan `authMode:"auth_exchange"`. `get_version` melalui POST juga tersedia tanpa login, tidak mengeluarkan data dalaman dan tidak mengubah Sheets.
+
+**Jangan reset PIN, ubah Apps Script e-Keberadaan, atau jalankan populate_master untuk menyelesaikan masalah versi ini.** Setelah dua versi sepadan, barulah uji `getBootstrapData(ekeToken)` dengan sesi sebenar. Jangan kongsikan token atau PIN dalam tangkap layar/log.

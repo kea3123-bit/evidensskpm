@@ -56,3 +56,9 @@ test("e-Keberadaan authenticates PIN only once; SKAS exchanges existing session"
   assert.doesNotMatch(html,/establishBackendSession\(loginEmail,pin\)/);
   assert.doesNotMatch(html,/action:"auth_login"/);
 });
+
+test("frontend detects older SKAS backend version instead of calling it an expired session",()=>{
+  assert.match(html,/data\.code==="AUTH_REQUIRED"/);
+  assert.match(html,/auth_exchange belum tersedia/);
+  assert.match(html,/Deploy > Manage deployments > Edit > New version > Deploy/);
+});
