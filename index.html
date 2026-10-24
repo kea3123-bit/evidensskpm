@@ -266,16 +266,15 @@
         <div class="nav-label">Ruang Kerja</div>
         <ul class="nav-list">
           <li class="active" onclick="switchNav('analisis', this)"><a href="#"><i class="fa-solid fa-chart-pie"></i> Analisis Utama</a></li>
-          <li onclick="switchNav('jawatankuasa', this)"><a href="#"><i class="fa-solid fa-sitemap"></i> Jawatankuasa SK@S</a></li>
-          <li onclick="switchNav('checklist', this)"><a href="#"><i class="fa-solid fa-list-check"></i> Senarai Semak</a></li>
-          <li onclick="switchNav('standard', this)"><a href="#"><i class="fa-solid fa-book-bookmark"></i> Senarai Standard</a></li>
-          <li onclick="switchNav('pps', this)"><a href="#"><i class="fa-solid fa-users-rectangle"></i> Senarai PPS</a></li>
           <li onclick="switchNav('muatnaik', this)"><a href="#"><i class="fa-solid fa-cloud-arrow-up"></i> Muat Naik Eviden</a></li>
           <li onclick="switchNav('senarai_eviden', this)"><a href="#"><i class="fa-solid fa-folder-open"></i> Senarai Eviden</a></li>
-          <li onclick="switchNav('folder', this)"><a href="#"><i class="fa-solid fa-folder-tree"></i> Struktur Folder SK@S</a></li>
         </ul>
-        <div class="nav-label admin-only">Pentadbir</div>
+        <div class="nav-label admin-only">Pentadbiran</div>
         <ul class="nav-list admin-only">
+          <li onclick="switchNav('jawatankuasa', this)"><a href="#"><i class="fa-solid fa-sitemap"></i> Jawatankuasa SK@S</a></li>
+          <li onclick="switchNav('checklist', this)"><a href="#"><i class="fa-solid fa-list-check"></i> Senarai Semak</a></li>
+          <li onclick="switchNav('standard', this)"><a href="#"><i class="fa-solid fa-folder-tree"></i> Senarai Standard & Folder</a></li>
+          <li onclick="switchNav('pps', this)"><a href="#"><i class="fa-solid fa-users-rectangle"></i> Senarai PPS</a></li>
           <li onclick="switchNav('pengguna', this)"><a href="#"><i class="fa-solid fa-user-gear"></i> Pengurusan Pengguna</a></li>
           <li onclick="switchNav('tetapan', this)"><a href="#"><i class="fa-solid fa-sliders"></i> Tetapan Sistem</a></li>
         </ul>
@@ -387,12 +386,12 @@
         <div id="module-standard" class="module-pane" style="display:none;">
           <div class="page-title-box">
             <div>
-              <h2 class="page-title">Senarai Rujukan Standard (SK@S)</h2>
-              <p style="color:var(--text-muted); font-size:0.85rem;">Piawaian 5 Standard SKPM Kualiti @ Sekolah</p>
+              <h2 class="page-title">Senarai Standard & Folder SK@S</h2>
+              <p style="color:var(--text-muted); font-size:0.85rem;">Satu sumber data: setiap item standard mempunyai struktur folder Google Drive yang sepadan.</p>
             </div>
             <div class="no-print" style="display:flex; gap:10px;">
               <button class="btn-login-full admin-only" onclick="openAddStandardModal()" style="width:auto; padding:8px 16px;">
-                <i class="fa-solid fa-plus"></i> Tambah Item Standard
+                <i class="fa-solid fa-plus"></i> Tambah Standard + Folder
               </button>
               <button class="btn-login-full" onclick="window.print()" style="width:auto; padding:8px 16px;">
                 <i class="fa-solid fa-print"></i> Cetak
@@ -418,11 +417,27 @@
             <div class="table-responsive">
               <table id="standard-table">
                 <thead>
-                  <tr><th>Standard</th><th>No Item</th><th>Aspek</th><th>Huraian</th><th class="admin-only no-print">Aksi</th></tr>
+                  <tr><th>Standard</th><th>No Item</th><th>Aspek</th><th>Huraian</th><th>Folder Drive</th><th class="admin-only no-print">Aksi</th></tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
+          </div>
+          <div class="view-card">
+            <div class="page-title-box">
+              <div>
+                <h3 class="panel-heading">Struktur Folder Automatik</h3>
+                <p class="helper-text">Struktur ini dibina daripada SENARAI STANDARD, bukan senarai ZIP statik. Folder sebenar diwujudkan di Drive apabila item ditambah atau disegerakkan oleh pentadbir.</p>
+              </div>
+              <button type="button" class="btn-login-full admin-only no-print" style="width:auto;padding:9px 14px" onclick="syncAllStandardFolders()">
+                <i class="fa-solid fa-arrows-rotate"></i> Segerak Folder Drive
+              </button>
+            </div>
+            <div class="no-print">
+              <input id="standard-folder-search" class="form-control" type="search" placeholder="Cari Standard, Aspek atau No Item..." oninput="renderStandardFolderTree()" style="margin-bottom:10px">
+            </div>
+            <p id="standard-folder-summary" class="helper-text"></p>
+            <div id="standard-folder-tree"></div>
           </div>
         </div>
 
@@ -625,26 +640,6 @@
           </div>
         </div>
 
-
-        <!-- Indeks folder daripada ZIP pengguna: label rujukan, bukan fail pada Drive -->
-        <div id="module-folder" class="module-pane" style="display:none;">
-          <div class="page-title-box"><h2 class="page-title">Struktur Folder Induk SK@S 2026</h2></div>
-          <div class="info-strip"><strong>Perhatian: ZIP asal tidak sepenuhnya selaras dengan Buku SK@S.</strong> Jadual 2 pada halaman PDF 24–26 menyenaraikan aspek rasmi yang tidak terdapat dalam ZIP, dan beberapa folder mempunyai label atau nombor yang berbeza. Rujuk katalog perbandingan di bawah. Jangan pilih item berdasarkan nama ZIP sahaja.</div>
-          <div class="view-card">
-            <h3 class="panel-heading">Katalog Aspek Rasmi (Buku SK@S, Jadual 2)</h3>
-            <p class="helper-text">Ini ialah 38 kategori aspek dalam Standard 1–5, termasuk pecahan 3.1, 3.2 dan 3.3. Bilangan keseluruhan 115 subaspek dalam buku tidak sama dengan bilangan folder atau baris di sini. Rekod item terperinci terus dirujuk dari SENARAI STANDARD.</p>
-            <div class="table-responsive">
-              <table id="official-aspects-table"><thead><tr><th>Standard</th><th>Kod</th><th>Aspek rasmi</th><th>Status ZIP asal</th></tr></thead><tbody></tbody></table>
-            </div>
-          </div>
-          <div class="info-strip"><strong>Indeks ZIP asal:</strong> 12 kategori induk dan 80 laluan subfolder, semuanya placeholder .keep. Ia tidak mengandungi dokumen eviden sebenar dan tidak mencipta folder Google Drive.</div>
-          <div class="view-card">
-            <label for="folder-search" class="panel-heading">Cari folder, standard atau bidang</label>
-            <input id="folder-search" class="form-control" type="search" oninput="filterFolders()" placeholder="Contoh: 3.3, kokurikulum, minit mesyuarat" style="width:100%;margin-bottom:12px">
-            <p id="folder-count" class="helper-text"></p>
-            <div id="folder-catalog"></div>
-          </div>
-        </div>
 
         <!-- 8. PENGURUSAN PENGGUNA -->
         <div id="module-pengguna" class="module-pane admin-only" style="display:none;">
@@ -893,8 +888,7 @@
         renderPPS();
         renderUploadForm();
         renderEvidenTable();
-        renderFolderCatalog();
-        renderOfficialAspects();
+        renderStandardFolderTree();
         if (isPrivilegedUser()) renderUsersTable();
         return true;
       } catch (err) {
@@ -1085,6 +1079,7 @@
           <td><b>${escapeHtml(s['No Item'])}</b></td>
           <td><b>${escapeHtml(s.Aspek)}</b></td>
           <td style="font-size:0.85rem; color:#475569;">${escapeHtml(s.Huraian)}</td>
+          <td>${safeHref(s['Folder URL']) ? '<a href="'+escapeAttr(safeHref(s['Folder URL']))+'" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-folder-open"></i> Buka folder</a>' : '<span class="helper-text">Belum segerak</span>'}</td>
           ${isAdmin ? `
             <td class="admin-only no-print" style="white-space:nowrap;">
               <button class="btn-action-icon" title="Kemas Kini" onclick="editStandardAt(${Number(s._row)})"><i class="fa-solid fa-pen"></i></button>
@@ -1167,44 +1162,31 @@
     }
 
     async function submitSaveStandard(e) {
-      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
       e.preventDefault();
-      showLoader("Menyimpan Standard...");
-      const payload = {
-        action: "save_standard",
-        standard: document.getElementById('std-add-name').value.trim(),
-        noItem: document.getElementById('std-add-item').value.trim(),
-        aspek: document.getElementById('std-add-aspek').value.trim(),
-        huraian: document.getElementById('std-add-huraian').value.trim()
-      };
-      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
-      closeUniversalModal();
-      await loadAppBundle();
+      if (!isPrivilegedUser()) return alert("Pentadbir sahaja.");
+      await standardRequest({
+        action:"save_standard",
+        standard:document.getElementById("std-add-name").value.trim(),
+        noItem:document.getElementById("std-add-item").value.trim(),
+        aspek:document.getElementById("std-add-aspek").value.trim(),
+        huraian:document.getElementById("std-add-huraian").value.trim()
+      },"Menambah Standard dan folder");
     }
-
-    async function submitUpdateStandard(e, row) {
-      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
+    async function submitUpdateStandard(e,row) {
       e.preventDefault();
-      showLoader("Mengemas kini Standard...");
-      const payload = {
-        action: "update_standard",
-        row: row,
-        standard: document.getElementById('std-edit-name').value.trim(),
-        noItem: document.getElementById('std-edit-item').value.trim(),
-        aspek: document.getElementById('std-edit-aspek').value.trim(),
-        huraian: document.getElementById('std-edit-huraian').value.trim()
-      };
-      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify(payload) });
-      closeUniversalModal();
-      await loadAppBundle();
+      if (!isPrivilegedUser()) return alert("Pentadbir sahaja.");
+      await standardRequest({
+        action:"update_standard",row,
+        standard:document.getElementById("std-edit-name").value.trim(),
+        noItem:document.getElementById("std-edit-item").value.trim(),
+        aspek:document.getElementById("std-edit-aspek").value.trim(),
+        huraian:document.getElementById("std-edit-huraian").value.trim()
+      },"Mengemas kini Standard dan folder");
     }
-
-    async function deleteStandardRow(row, item) {
-      if (!isPrivilegedUser()) return alert("Tindakan pentadbir sahaja.");
-      if (!confirm(`Padam item standard "${item}"?`)) return;
-      showLoader("Memadam Item Standard...");
-      await spesFetch(SPES_API_URL, { method: "POST", body: JSON.stringify({ action: "delete_standard", row: row }) });
-      await loadAppBundle();
+    async function deleteStandardRow(row,item) {
+      if (!isPrivilegedUser()) return alert("Pentadbir sahaja.");
+      if (!confirm('Padam rujukan standard "'+item+'"? Folder dan fail Drive tidak akan dipadam.')) return;
+      await standardRequest({action:"delete_standard",row},"Memadam item Standard");
     }
 
     // -------------------------------------------------------------
@@ -1615,7 +1597,7 @@
         document.getElementById('upload-catatan').value="";
         document.getElementById('upload-pautan').value="";
         fileInput.value="";
-        if (await loadAppBundle()) switchNav('senarai_eviden', document.querySelectorAll('.nav-list li')[6]);
+        if (await loadAppBundle()) switchNav('senarai_eviden');
       } catch(err) {
         alert("Gagal menyimpan eviden: "+(err.message || err));
       } finally { hideLoader(); }
@@ -1845,7 +1827,7 @@
       if (x) openEditChecklistModal(row,x.Bilangan,x.Status,x.Perkara,x.PIC,x.Catatan);
     }
     function switchNav(moduleId, el) {
-      if(["pengguna","tetapan"].includes(moduleId) && !isPrivilegedUser()) return;
+      if(["jawatankuasa","checklist","standard","pps","pengguna","tetapan"].includes(moduleId) && !isPrivilegedUser()) return;
       document.querySelectorAll('.nav-list li').forEach(li=>li.classList.remove('active'));
       const targetLi=el||[...document.querySelectorAll('.nav-list li')].find(li=>li.getAttribute('onclick')?.includes("'"+moduleId+"'"));
       if(targetLi)targetLi.classList.add('active');
@@ -1885,72 +1867,76 @@
     }
     let AVAILABLE_COVERAGE_STANDARDS=[];
     let AVAILABLE_UPLOADERS=[];
-    // Direktori ini menyalin label struktur ZIP; ia BUKAN item rasmi atau pautan Drive.
-    const FOLDER_CATALOG=[
-      ["00_PENGURUSAN SK@S",["01_Panduan & Instrumen SK@S","02_Surat & Pekeliling","03_Jawatankuasa SK@S","04_Takwim","05_Mesyuarat","06_Pemantauan","07_Tindakan Susulan"]],
-      ["01_STANDARD 1_KEPEMIMPINAN",["1.1_PGB Sebagai Peneraju","1.2_PGB Sebagai Pembimbing","Evidens"]],
-      ["02_STANDARD 2_PENGURUSAN ORGANISASI",["2.1_Pengurusan Sumber Manusia","2.2_Pengurusan Aset","2.3_Pengurusan Kewangan","2.4_Pengurusan Sumber Pendidikan","2.5_Pengurusan Iklim","2.6_Pengurusan Perpaduan","Evidens"]],
-      ["03_STANDARD 3.1_KURIKULUM",["3.1.1_Ketetapan Pelaksanaan Kurikulum","3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu","3.1.2_Pengurusan Mata Pelajaran/Bahasa Inggeris","3.1.2_Pengurusan Mata Pelajaran/Matematik","3.1.2_Pengurusan Mata Pelajaran/Sains","3.1.2_Pengurusan Mata Pelajaran/Sejarah","3.1.2_Pengurusan Mata Pelajaran/Pendidikan Islam","3.1.2_Pengurusan Mata Pelajaran/Pendidikan Moral","3.1.2_Pengurusan Mata Pelajaran/RBT","3.1.2_Pengurusan Mata Pelajaran/ASK","3.1.2_Pengurusan Mata Pelajaran/Mata Pelajaran Lain","Evidens"]],
-      ["04_STANDARD 3.2_KOKURIKULUM",["3.2.1_Kelab & Persatuan","3.2.2_Unit Beruniform","3.2.3_Sukan & Permainan","3.2.4_Penyertaan & Pencapaian","PAJSK","Evidens"]],
-      ["05_STANDARD 3.3_HEM",["3.3.1_Kehadiran","3.3.2_Disiplin","3.3.3_Kebajikan","3.3.4_Bimbingan & Kaunseling","3.3.5_Kesihatan","3.3.6_SPBT","3.3.7_Keselamatan","Evidens"]],
-      ["06_STANDARD 4_PENGAJARAN & PEMBELAJARAN",["4.1_Perancangan PdP","4.2_Pelaksanaan PdP","4.3_Pentaksiran","4.4_Pembelajaran Murid","4.5_Pencerapan","Evidens"]],
-      ["07_STANDARD 5_KEMENJADIAN & PENCAPAIAN",["5.1_Kemenjadian Murid","5.2_Pencapaian Murid","5.3_Pencapaian Guru","5.4_Pencapaian Sekolah","Evidens"]],
-      ["08_PROGRAM & INTERVENSI SEKOLAH",["Akademik","HEM","Kokurikulum","Pembangunan Guru","Intervensi Murid","Laporan Program"]],
-      ["09_ANALISIS & DATA",["Akademik","Peperiksaan","PBD","Kokurikulum","Disiplin","Kehadiran","Analisis SK@S"]],
-      ["10_DOKUMENTASI EVIDENS",["01_Kertas Kerja","02_Minit Mesyuarat","03_Surat","04_Laporan","05_Gambar","06_Sijil","07_Evidens Tambahan"]],
-      ["11_PEMANTAUAN & PENAMBAHBAIKAN",["Instrumen Pemantauan","Dapatan","Analisis","Pelan Intervensi","Tindakan Susulan","Laporan Penambahbaikan"]]
-    ];
-    function folderPath(index,childIndex){
-      const entry=FOLDER_CATALOG[index];
-      return entry?["SKAS_MASTER_FOLDER_2026",entry[0],...(childIndex>=0?[entry[1][childIndex]]:[])].filter(Boolean).join("/"):"";
-    }
-
-    // Jadual 2 Buku SK@S Salinan Digital, halaman PDF fizikal 24–26 / bercetak 11–13.
-    // This is a display/checklist index, NOT a substitute for the full 115-subaspek database.
-    const OFFICIAL_ASPECTS=[
-      [1,"Standard 1: Kepemimpinan",[["1.1","Pengetua/Guru Besar (PGB) Sebagai Peneraju"],["1.2","PGB Sebagai Pembimbing"],["1.3","PGB Sebagai Pendorong"]]],
-      [2,"Standard 2: Pengurusan Organisasi",[["2.1","Pengurusan Sumber Manusia"],["2.2","Pengurusan Aset"],["2.3","Pengurusan Kewangan"],["2.4","Pengurusan Sumber Pendidikan"],["2.5","Iklim"],["2.6","Pengurusan Perpaduan"],["2.7","Permuafakatan Strategik"]]],
-      [3,"Standard 3.1: Pengurusan Kurikulum",[["3.1.1","Ketetapan Pelaksanaan Kurikulum"],["3.1.2","Pengurusan Mata Pelajaran"],["3.1.3","Pengurusan Masa Instruksional"],["3.1.4","Pengurusan Penilaian Murid"]]],
-      [4,"Standard 3.2: Pengurusan Kokurikulum",[["3.2.1","Ketetapan Pelaksanaan Kokurikulum"],["3.2.2","Pengurusan Kelab/Persatuan"],["3.2.3","Pengurusan Badan Beruniform"],["3.2.4","Pengurusan Sukan/Permainan"],["3.2.5","Pengurusan Program Kecemerlangan Kokurikulum"],["3.2.6","Pengurusan Sukan Untuk Semua"],["3.2.7","Pengurusan Pentaksiran Kokurikulum"]]],
-      [5,"Standard 3.3: Pengurusan Hal Ehwal Murid",[["3.3.1","Ketetapan Pelaksanaan Hal Ehwal Murid"],["3.3.2","Pengurusan Disiplin Murid"],["3.3.3","Pengurusan Keselamatan Murid"],["3.3.4","Pengurusan Kesihatan Murid"],["3.3.5","Pengurusan Bantuan Pelajaran Murid"],["3.3.6","Pengurusan Perkhidmatan Bimbingan dan Kaunseling"],["3.3.7","Pengurusan Pentaksiran Psikometrik"]]],
-      [6,"Standard 4: Pembelajaran dan Pemudahcaraan",[["4.1","Guru Sebagai Perancang"],["4.2","Guru Sebagai Pengawal"],["4.3","Guru Sebagai Pembimbing"],["4.4","Guru Sebagai Pendorong"],["4.5","Guru Sebagai Penilai"],["4.6","Murid Sebagai Pembelajar Aktif"]]],
-      [7,"Standard 5: Kemenjadian Murid, Pencapaian Guru dan Sekolah",[["5.1","Kemenjadian Murid dalam Akademik"],["5.2","Kemenjadian Murid dalam Kokurikulum"],["5.3","Kemenjadian Sahsiah Murid"],["5.4","Pencapaian Guru dan Pencapaian Sekolah"]]]
-    ];
-    const KNOWN_WRONG_ZIP_LABEL_CODES = new Set([
-      "3.2.1","3.2.2","3.2.3","3.2.4",
-      "3.3.1","3.3.3","3.3.4","3.3.5","3.3.6","3.3.7",
-      "4.1","4.2","4.3","4.4","4.5",
-      "5.1","5.2","5.3","5.4"
-    ]);
-    function renderOfficialAspects(){
-      const rows=OFFICIAL_ASPECTS.flatMap(([index,title,aspects])=>aspects.map(([code,label])=>{
-        const folder=(FOLDER_CATALOG[index][1]||[]).find(name=>name.split("_")[0]===code);
-        const status=!folder ? "Tiada folder kod ini" :
-          KNOWN_WRONG_ZIP_LABEL_CODES.has(code)?"Label tidak sepadan":"Kod ada (sahkan item)";
-        return '<tr><td>'+escapeHtml(title)+'</td><td><b>'+escapeHtml(code)+'</b></td><td>'+escapeHtml(label)+'</td><td>'+escapeHtml(status)+'</td></tr>';
+    // Both the reference table and the visual folder tree read SENARAI STANDARD.
+    function deriveStandardFolderTree(records) {
+      const result = new Map();
+      for (const item of records || []) {
+        const standard = String(item.Standard || "").trim();
+        const aspek = String(item.Aspek || "").trim();
+        const code = String(item["No Item"] || "").trim();
+        if (!standard || !aspek || !code) continue;
+        if (!result.has(standard)) result.set(standard, new Map());
+        const aspects = result.get(standard);
+        if (!aspects.has(aspek)) aspects.set(aspek, []);
+        aspects.get(aspek).push(item);
+      }
+      return [...result].map(([standard, aspects]) => ({
+        standard, aspects: [...aspects].map(([aspek, items]) => ({
+          aspek, items: items.slice().sort((a,b) => String(a["No Item"]).localeCompare(String(b["No Item"]), undefined, {numeric:true}))
+        }))
       }));
-      document.querySelector("#official-aspects-table tbody").innerHTML=rows.join("");
     }
-    function renderFolderCatalog(){
-      const node=document.getElementById("folder-catalog");
-      node.innerHTML=FOLDER_CATALOG.map(([name,children],i)=>'<details class="folder-group"><summary>'+escapeHtml(name)+' <small>('+children.length+' laluan)</small></summary><div class="folder-list">'+children.map((child,j)=>'<div class="folder-path"><span>'+escapeHtml(child)+'</span><button type="button" title="Salin laluan" onclick="copyFolderPath('+i+','+j+')"><i class="fa-solid fa-copy"></i></button></div>').join("")+'</div></details>').join("");
-      filterFolders();
+    function renderStandardFolderTree() {
+      const parent = document.getElementById("standard-folder-tree");
+      if (!parent || !SYSTEM_BUNDLE) return;
+      const q = normalizeSearch(document.getElementById("standard-folder-search")?.value || "");
+      const all = deriveStandardFolderTree(SYSTEM_BUNDLE.standards);
+      let displayed = 0, available = 0, total = 0;
+      const groups = all.map(({standard,aspects}) => {
+        const children = aspects.map(({aspek,items}) => {
+          const visible = items.filter(item => !q ||
+            normalizeSearch([standard,aspek,item["No Item"],item.Huraian].join(" ")).includes(q));
+          if (!visible.length) return "";
+          displayed += visible.length;
+          available += visible.filter(x=>Boolean(safeHref(x["Folder URL"]))).length;
+          return '<details class="folder-group" '+(q?'open':'')+'><summary><i class="fa-regular fa-folder"></i> '+escapeHtml(aspek)+' <small>('+visible.length+' item)</small></summary>'+
+            '<div class="folder-list">'+visible.map(item=>{
+              const href=safeHref(item["Folder URL"]);
+              const label=escapeHtml(item["No Item"]);
+              return '<div class="folder-path"><span><i class="fa-regular fa-file-lines"></i> Item '+label+'</span>'+
+                (href?'<a target="_blank" rel="noopener noreferrer" href="'+escapeAttr(href)+'" aria-label="Buka folder Item '+escapeAttr(item["No Item"])+'"><i class="fa-solid fa-folder-open"></i> Drive</a>':
+                '<span class="helper-text">Belum segerak</span>')+'</div>';
+            }).join("")+'</div></details>';
+        }).filter(Boolean).join("");
+        if (!children) return "";
+        return '<details class="folder-group" '+(q?'open':'')+'><summary><i class="fa-solid fa-folder-tree"></i> '+escapeHtml(standard)+'</summary><div style="padding:10px 16px">'+children+'</div></details>';
+      }).filter(Boolean);
+      total = (SYSTEM_BUNDLE.standards || []).length;
+      parent.innerHTML = groups.join("") || '<p class="helper-text">Tiada folder untuk carian ini.</p>';
+      document.getElementById("standard-folder-summary").textContent =
+        displayed+' / '+total+' item dipaparkan · '+available+' folder Drive siap dipautkan. Folder baharu mengikut Standard → Aspek → No Item.';
     }
-    function filterFolders(){
-      const q=normalizeSearch(document.getElementById("folder-search").value);
-      let shown=0;
-      document.querySelectorAll("#folder-catalog details").forEach((node,i)=>{
-        const category=FOLDER_CATALOG[i],full=normalizeSearch(category.join(" "));
-        node.hidden=!!q&&!full.includes(q);
-        if(!node.hidden){shown++;if(q)node.open=true}
-        if(!q)node.open=false;
-      });
-      document.getElementById("folder-count").textContent=shown+" / "+FOLDER_CATALOG.length+" kategori daripada arkib ZIP asal";
+    async function standardRequest(payload, actionLabel) {
+      if (!isPrivilegedUser() || !SPES_AUTH_TOKEN) return alert("Pentadbir mesti log masuk dengan backend SK@S terkini.");
+      showLoader(actionLabel);
+      try {
+        const response = await spesFetch(SPES_API_URL,{method:"POST",body:JSON.stringify(payload)});
+        if (!response.ok) throw new Error("HTTP "+response.status);
+        const result = await response.json();
+        if (result.status!=="success") throw new Error(result.message||"Operasi tidak berjaya.");
+        if (payload.action==="save_standard" || payload.action==="update_standard") closeUniversalModal();
+        await loadAppBundle();
+        return result;
+      } catch(err) {
+        alert(actionLabel+" gagal: "+(err.message||err));
+        return null;
+      } finally { hideLoader(); }
     }
-    async function copyFolderPath(i,j){
-      const path=folderPath(i,j);
-      try{if(!navigator.clipboard)throw Error("clipboard tiada");await navigator.clipboard.writeText(path)}
-      catch{prompt("Salin laluan folder:",path)}
+    async function syncAllStandardFolders() {
+      if (!isPrivilegedUser()) return alert("Pentadbir sahaja.");
+      const result = await standardRequest({action:"sync_standard_folders"},"Menyegerakkan folder Standard");
+      if (result) alert((result.message||"Penyegerakan selesai.")+" "+result.synced+" folder diproses."+
+        (result.remaining?" "+result.remaining+" masih menunggu; tekan Segerak Folder Drive sekali lagi.":""));
     }
   </script>
 </body>
