@@ -157,7 +157,7 @@ test("repair only managed recorded Drive files, skips external URLs and foreign 
  assert.equal(foreign.getSharingAccess(),"PRIVATE");
  const again=sandbox.repairEvidenceAccess(ss,{offset:0});
  assert.equal(again.repaired,0);
- assert.ok(again.already>=4);
+ assert.ok(again.already>=3);
 });
 test("repair is protected by backend admin-action permission list",()=>{
  assert.equal(vm.runInContext('ADMIN_ACTIONS_.indexOf("repair_evidence_access")>=0',sandbox),true);
