@@ -35,6 +35,7 @@ test("book code and aspect labels prevent incorrect replacement of HEM codes",()
  const leading=refs.find(x=>x.code==="1.1");
  assert.equal(run("bookRowMatch("+JSON.stringify(leading)+",{Aspek:'Standard 1.1 PGB Sebagai Peneraju','No Item':'1.1.1'})"),true);
  assert.equal(run("bookRowMatch("+JSON.stringify(leading)+",{Aspek:'PGB Sebagai Peneraju','No Item':'1.1'})"),true);
+ assert.equal(run("bookRowMatch("+JSON.stringify(leading)+",{Aspek:'PGB Sebagai Peneraju','No Item':'1.1.8'})"),false);
  const guide=refs.find(x=>x.code==="4.3");
  assert.equal(run("bookRowMatch("+JSON.stringify(guide)+",{Aspek:'Pentaksiran','No Item':'4.3'})"),false);
 });
