@@ -306,7 +306,8 @@ function getSystemBundle(ss, tahunReq, auth) {
         jenis: eData[j][8],
         tajuk: eData[j][9],
         catatan: eData[j][10],
-        pautan: eData[j][11]
+        pautan: eData[j][11],
+        accessStatus: String(eData[j][14]||"unknown")
       });
     }
   }
@@ -696,6 +697,8 @@ function repairEvidenceAccess(ss,p) {
   var nextOffset=Math.min(total,offset+10);
   var results={status:"success",processed:nextOffset-offset,repaired:0,already:0,skipped:0,failed:0,nextOffset:nextOffset,remaining:total-nextOffset,total:total};
   for(var i=offset;i<nextOffset;i++){
+    // A teacher deliberately left sharing private; never override that choice.
+    if(String(rows[i+1][14]||"").toLowerCase()==="private"){results.skipped++;continue;}
     var fileId=uploadedDriveFileId_(rows[i+1][11]);
     if(!fileId){results.skipped++;continue;}
     try{
@@ -707,8 +710,12 @@ function repairEvidenceAccess(ss,p) {
         results.already++;continue;
       }
       var share=setEvidenceAccess_(file,"link");
-      if(share.status==="link")results.repaired++;
-      else results.failed++;
+      if(share.status==="link"){
+        results.repaired++;
+        // Preserve the original evidence row and record only its access mode.
+        evidenceAccessColumn_(sheet);
+        sheet.getRange(i+2,15).setValue("link");
+      } else results.failed++;
     }catch(err){
       results.failed++;
       Logger.log("SKAS old evidence sharing repair failed on row "+(i+2)+": "+String(err));
@@ -717,6 +724,11 @@ function repairEvidenceAccess(ss,p) {
   return results;
 }
 
+function evidenceAccessColumn_(sh){
+  var header=String(sh.getRange(1,15).getValue()||"").trim();
+  if(header && header!=="Akses Fail")throw new Error("Lajur O EVIDEN sudah digunakan: "+header);
+  if(!header)sh.getRange(1,15).setValue("Akses Fail");
+}
 function saveEviden(ss,p){
   validateEviden_(ss,p);
   var bundleYear=String(getSystemBundleYear_(ss));
@@ -729,6 +741,7 @@ function saveEviden(ss,p){
   }
   var sheet=ss.getSheetByName("EVIDEN");
   if(!sheet)throw new Error("Helaian EVIDEN tiada.");
+  evidenceAccessColumn_(sheet);
   if(isFile){
     if(String(p.fileBase64).length>22*1024*1024)throw new Error("Fail melebihi 15 MB.");
     // Use the same Drive folder reference managed by SENARAI STANDARD.
@@ -767,7 +780,7 @@ function saveEviden(ss,p){
     if (sheet.getRange(1,14).getValue()==="") sheet.getRange(1,14).setValue("Pemuat Email");
     var now=Utilities.formatDate(new Date(),"Asia/Kuala_Lumpur","yyyy-MM-dd HH:mm:ss");
     sheet.appendRow([id,bundleYear,safeCell_(p.pemuatNaik),p.standard,p.noItem,p.aspek,p.huraian,
-      p.pdca,safeCell_(p.jenis),safeCell_(p.tajuk),safeCell_(p.catatan),fileUrl,now,p.pemuatEmail]);
+      p.pdca,safeCell_(p.jenis),safeCell_(p.tajuk),safeCell_(p.catatan),fileUrl,now,p.pemuatEmail,shareStatus]);
     return {status:"success",id:id,url:fileUrl,accessStatus:shareStatus,accessWarning:shareWarning};
   }finally{lock.releaseLock();}
 }
