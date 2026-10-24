@@ -117,6 +117,7 @@ function getSystemBundle(ss, tahunReq, auth) {
         id: eData[j][0],
         tahun: eData[j][1],
         pemuatNaik: eData[j][2],
+        pemuatEmail: eData[j][13] || "",
         standard: eData[j][3],
         noItem: eData[j][4],
         aspek: eData[j][5],
@@ -362,10 +363,11 @@ function saveEviden(ss,p){
   var lock=LockService.getScriptLock();
   lock.waitLock(20000);
   try{
-    var id="EVD-"+bundleYear+"-"+Utilities.getUuid().split("-")[0].toUpperCase();
+    var id="EVD-"+bundleYear+"-"+Utilities.getUuid().replace(/-/g,"").toUpperCase().slice(0,16);
+    if (sheet.getRange(1,14).getValue()==="") sheet.getRange(1,14).setValue("Pemuat Email");
     var now=Utilities.formatDate(new Date(),"Asia/Kuala_Lumpur","yyyy-MM-dd HH:mm:ss");
     sheet.appendRow([id,bundleYear,safeCell_(p.pemuatNaik),p.standard,p.noItem,p.aspek,p.huraian,
-      p.pdca,safeCell_(p.jenis),safeCell_(p.tajuk),safeCell_(p.catatan),fileUrl,now]);
+      p.pdca,safeCell_(p.jenis),safeCell_(p.tajuk),safeCell_(p.catatan),fileUrl,now,p.pemuatEmail]);
     return {status:"success",id:id,url:fileUrl};
   }finally{lock.releaseLock();}
 }
@@ -384,7 +386,9 @@ function updateEviden(ss,p,auth){
   for(var i=1;i<rows.length;i++)if(String(rows[i][0])===String(p.id)){idx=i;break;}
   if(idx<0)return {status:"error",message:"Rekod tidak ditemui."};
   var original=rows[idx],originalOwner=String(original[2]||"").trim();
-  if(!auth.isAdmin && originalOwner!==auth.name) return {status:"error",code:"FORBIDDEN",message:"Guru hanya boleh mengemas kini eviden sendiri."};
+  var originalEmail=String(original[13]||"").trim().toLowerCase();
+  var owns=originalEmail ? originalEmail===String(auth.email).toLowerCase() : originalOwner===auth.name;
+  if(!auth.isAdmin && !owns) return {status:"error",code:"FORBIDDEN",message:"Guru hanya boleh mengemas kini eviden sendiri."};
   if(String(original[1])!==String(getSystemBundleYear_(ss)))return {status:"error",message:"Rekod tahun arkib tidak boleh diubah."};
   var update={
     standard:p.standard!==undefined?p.standard:original[3],
