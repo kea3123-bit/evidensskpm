@@ -11,16 +11,29 @@ const context = vm.createContext({ URL, console });
 new vm.Script(appJs, {filename:"index.html"}).runInContext(context);
 const run = (expression) => vm.runInContext(expression, context);
 
-test("app JS parses and 12 original master folder categories exist", () => {
-  assert.equal(run("FOLDER_CATALOG.length"), 12);
-  assert.ok(run("FOLDER_CATALOG.reduce((n,item)=>n+item[1].length,0)") >= 75);
-  assert.ok(run("folderPath(0,0)").startsWith("SKAS_MASTER_FOLDER_2026/"));
+test("Standard and Drive folders share the same live SENARAI STANDARD dataset", () => {
+  assert.doesNotMatch(html,/FOLDER_CATALOG/);
+  assert.doesNotMatch(html,/id="module-folder"/);
+  assert.match(html,/id="standard-folder-tree"/);
+  assert.match(html,/id="standard-table"/);
+  run(`SYSTEM_BUNDLE={standards:[
+    {Standard:"STANDARD 1: KEPIMPINAN",Aspek:"PGB Sebagai Peneraju","No Item":"1.1.1","Folder URL":"https://drive.google.com/folder/A"},
+    {Standard:"STANDARD 1: KEPIMPINAN",Aspek:"PGB Sebagai Peneraju","No Item":"1.1.2","Folder URL":""},
+    {Standard:"STANDARD 2: ORGANISASI",Aspek:"Pengurusan Aset","No Item":"2.2.1","Folder URL":"https://drive.google.com/folder/B"}
+  ]}`);
+  assert.equal(run("deriveStandardFolderTree(SYSTEM_BUNDLE.standards).length"), 2);
+  assert.equal(run("deriveStandardFolderTree(SYSTEM_BUNDLE.standards)[0].aspects[0].items.length"), 2);
+  run(`SYSTEM_BUNDLE.standards.push({Standard:"STANDARD 1: KEPIMPINAN",Aspek:"PGB Sebagai Peneraju","No Item":"1.1.3"})`);
+  assert.equal(run("deriveStandardFolderTree(SYSTEM_BUNDLE.standards)[0].aspects[0].items.length"), 3);
 });
-test("official aspects and missing ZIP headings are recognized", () => {
-  assert.equal(run("OFFICIAL_ASPECTS.reduce((n,g)=>n+g[2].length,0)"), 38);
-  const missing = run("OFFICIAL_ASPECTS.filter(g=>g[0]===1||g[0]===2).flatMap(g=>g[2].filter(a=>!FOLDER_CATALOG[g[0]][1].some(x=>x.split('_')[0]===a[0])).map(a=>a[0])).join(',')");
-  assert.equal(missing, "1.3,2.7");
-  assert.equal(run("OFFICIAL_ASPECTS[5][2].at(-1)[0]"), "4.6");
+test("Ruang Kerja contains exactly 3 modules and administrative modules are grouped together", () => {
+  const work = html.match(/<div class="nav-label">Ruang Kerja<\/div>([\s\S]*?)<div class="nav-label admin-only">Pentadbiran<\/div>/);
+  assert.ok(work);
+  assert.deepEqual([...work[1].matchAll(/switchNav\('([^']+)'/g)].map(x=>x[1]), ["analisis","muatnaik","senarai_eviden"]);
+  const admin = html.match(/<div class="nav-label admin-only">Pentadbiran<\/div>([\s\S]*?)<div class="sidebar-footer">/);
+  assert.ok(admin);
+  for(const module of ["jawatankuasa","checklist","standard","pps","pengguna","tetapan"])
+    assert.ok(admin[1].includes("switchNav('"+module+"'"),module);
 });
 test("unsafe protocols and HTML are not passed into evidence links", () => {
   assert.equal(run("safeHref('javascript:alert(1)')"), "");
@@ -43,7 +56,7 @@ test("active-year filter excludes archived years", () => {
   assert.equal(run("evidenceForActiveYear()[0].id"), "active");
 });
 test("evidence list has required guide controls", () => {
-  for (const id of ["filter-standard","filter-item","filter-uploader","filter-pdca","filter-search","folder-catalog","coverage-table"]) {
+  for (const id of ["filter-standard","filter-item","filter-uploader","filter-pdca","filter-search","standard-folder-tree","coverage-table"]) {
     assert.match(html, new RegExp('id="'+id+'"'));
   }
   assert.doesNotMatch(html,/action: "get_bundle", tahun: "2026"/);
