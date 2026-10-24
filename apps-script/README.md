@@ -155,3 +155,26 @@ Dalam menu **Pentadbiran**, modul `Senarai Standard & Folder` kini menggantikan 
 - **Pentadbiran (ADMIN sahaja):** Jawatankuasa SK@S, Senarai Semak, Senarai Standard & Folder, Senarai PPS, Pengurusan Pengguna, Tetapan Sistem.
 
 **Penting:** Data Google Sheets, Drive dan Apps Script yang telah dipasang **tidak berubah hanya kerana kod GitHub dikemas kini**. Deploy semula `apps-script/Code.gs` **projek SK@S sahaja**, kemudian lakukan penyegerakan folder melalui modul Pentadbiran. Jangan deploy atau ubah projek e-Keberadaan.
+
+## 10. Rebranding Standard dan import penuh ZIP asal (24 Oktober 2026)
+
+Nama modul di bawah `Pentadbiran` kini ialah **Standard** sahaja. Pengurusan folder kini merupakan **ciri dalam halaman Standard**; tiada modul berasingan bernama `Standard & Folder`.
+
+**Sumber yang digunakan:** `SKAS_MASTER_FOLDER_2026.zip` yang dimuat naik oleh pengguna. Fail ini mengandungi 80 fail placeholder `.keep` dalam 12 kumpulan folder. Tujuh kumpulan ialah Standard 1, 2, 3.1, 3.2, 3.3, 4 dan 5; lima kumpulan lain ialah pengurusan, program, analisis, dokumentasi dan pemantauan/penambahbaikan. Hanya **39 laluan berkod** boleh diimport sebagai *baris rujukan Standard*; selebihnya dipaparkan sebagai folder pengurusan/sokongan. Sepuluh pecahan `3.1.2` mengekalkan nama mata pelajaran masing-masing supaya tiada pertindihan kod.
+
+**Jangan anggap ZIP ini instrumen rasmi lengkap**: tiada kandungan huraian, dokumen eviden atau senarai penuh 115 subaspek di dalamnya. Item yang diimport mempunyai `Huraian` penanda untuk disemak terhadap instrumen SK@S; label folder asal termasuk ejaan dan struktur dikekalkan mengikut ZIP.
+
+### Proses selepas memasang Apps Script SK@S terkini
+
+1. **Backup terlebih dahulu** helaian `SENARAI STANDARD` serta folder induk Drive.
+2. Tukar seluruh **Code.gs projek SPES-SK@S** dengan versi terkini di GitHub. Pastikan OAuth untuk Drive, Sheets dan `script.external_request` telah diberi kepada akaun deployment; **jangan ubah Apps Script e-Keberadaan**.
+3. Deploy versi baharu di **Deploy → Manage deployments → Edit → New version → Deploy**.
+4. Log masuk sebagai **ADMIN**, kemudian buka **Pentadbiran → Standard**. Katalog 80 folder ZIP dipaparkan dalam modul yang sama tanpa perlu membuat folder terlebih dahulu.
+5. Klik **Import Item Standard ZIP**. Frontend menghantar panggilan berturutan sehingga semua 39 entri berkod diimport ke `SENARAI STANDARD`. Import selamat diulang: padanan `ZIP Path` atau Standard + No Item + Aspek sedia ada tidak digandakan; tiada helaian dikosongkan.
+6. Pastikan **Tetapan Sistem → Folder Drive Eviden** mengandungi ID folder Drive induk yang betul, kemudian klik **Bina Folder ZIP di Drive**. Ia akan menghasilkan struktur tepat `<Folder Induk>/SKAS_MASTER_FOLDER_2026/<Kategori ZIP>/<Subfolder>` untuk semua 80 laluan (12 item per panggilan; frontend mengulang sehingga selesai), dan mengisi `Folder ID` / `Folder URL` bagi item ZIP yang telah diimport.
+7. Fungsi **Segerak Folder Drive** masih boleh digunakan untuk semua item Standard lain yang belum mempunyai pautan. Item import ZIP akan menggunakan laluan asalnya (`ZIP Path`); item manual menggunakan laluan Standard → Aspek → No Item.
+8. Upload fail eviden baharu pada item ZIP yang diimport akan masuk ke folder leafnya secara automatik apabila laluan disegerakkan.
+
+**Perubahan skema:** empat lajur asal `SENARAI STANDARD` dikekalkan. Lajur E `Folder ID`, F `Folder URL`, dan G `ZIP Path` digunakan untuk integrasi folder. Jika G sudah mempunyai tajuk lain, import dihentikan supaya data sedia ada tidak ditimpa; semak skema dengan sandaran dahulu.
+
+**Tiada operasi pemadaman/pemindahan fail Drive automatik.** Import Standard ZIP dan ciptaan folder Drive dilakukan melalui butang berasingan untuk membolehkan pentadbir menyemak data sebelum menghasilkan folder fizikal. GitHub code merge sahaja tidak mengubah Google Sheets/Drive sebenar.
