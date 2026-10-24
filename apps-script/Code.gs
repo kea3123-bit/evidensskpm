@@ -650,9 +650,7 @@ function setEvidenceAccess_(file,choice) {
   try {
     var access=file.getSharingAccess();
     var permission=file.getSharingPermission();
-    if(access!==DriveApp.Access.ANYONE_WITH_LINK && access!==DriveApp.Access.ANYONE) {
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
-    } else if (permission!==DriveApp.Permission.VIEW && permission!==DriveApp.Permission.EDIT) {
+    if(access!==DriveApp.Access.ANYONE_WITH_LINK || permission!==DriveApp.Permission.VIEW) {
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
     }
     return {status:"link"};
@@ -705,8 +703,7 @@ function repairEvidenceAccess(ss,p) {
       if(!isInsideEvidenceRoot_(file,rootId)){results.skipped++;continue;}
       var previous=file.getSharingAccess();
       var permission=file.getSharingPermission();
-      if((previous===DriveApp.Access.ANYONE_WITH_LINK||previous===DriveApp.Access.ANYONE) &&
-        (permission===DriveApp.Permission.VIEW||permission===DriveApp.Permission.EDIT)){
+      if(previous===DriveApp.Access.ANYONE_WITH_LINK && permission===DriveApp.Permission.VIEW){
         results.already++;continue;
       }
       var share=setEvidenceAccess_(file,"link");
