@@ -79,14 +79,14 @@ test("evidence-linked standards cannot be deleted or recoded, but descriptions c
  assert.equal(folderMap.size,before);
 });
 
-test("ZIP contains all 80 .keep paths in 12 groups and 39 coded Standard paths",()=>{
+test("ZIP has 80 .keep paths in 12 groups and 30 distinct coded Standard aspects",()=>{
  const groups=sandbox.skasZipFolders_();
  assert.equal(groups.length,12);
  assert.equal(groups.reduce((n,g)=>n+g.paths.length,0),80);
  const records=sandbox.skasZipStandardEntries_();
- assert.equal(records.length,39);
- assert.equal(records.filter(x=>x.noItem==="3.1.2").length,10);
- assert.equal(new Set(records.map(x=>x.zipPath)).size,39);
+ assert.equal(records.length,30);
+ assert.equal(records.filter(x=>x.noItem==="3.1.2").length,1);
+ assert.equal(new Set(records.map(x=>x.zipPath)).size,30);
  assert.equal(groups.find(x=>x.name==="05_STANDARD 3.3_HEM").paths.includes("3.3.5_Kesihatan"),true);
  assert.equal(groups.find(x=>x.name==="03_STANDARD 3.1_KURIKULUM").paths.includes("3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu"),true);
  assert.equal(groups.filter(g=>/^0[1-7]_STANDARD /.test(g.name)).length,7);
@@ -99,30 +99,32 @@ test("import all ZIP Standard entries safely in 15-row batches, without duplicat
    assert.ok(r.nextOffset>offset);
    added+=r.added;
    offset=r.nextOffset;
- }while(offset<39);
- assert.equal(added,39);
- assert.equal(standards.rows.length,42);
+ }while(offset<30);
+ assert.equal(added,30);
+ assert.equal(standards.rows.length,33);
  const imports=standards.rows.slice(3);
- assert.equal(imports.filter(r=>r[1]==="3.1.2").length,10);
+ assert.equal(imports.filter(r=>r[1]==="3.1.2").length,1);
  assert.ok(imports.every(r=>r[6]));
  offset=0;let replayAdded=0;
  do {
    const r=sandbox.importZipStandards(ss,{offset});
    replayAdded+=r.added;offset=r.nextOffset;
- }while(offset<39);
+ }while(offset<30);
  assert.equal(replayAdded,0);
- assert.equal(standards.rows.length,42);
+ assert.equal(standards.rows.length,33);
 });
 test("creating an imported ZIP hierarchy preserves exact nested subject folder names",()=>{
- const ref=standards.rows.find(row=>String(row[6]||"").endsWith("3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu"));
+ const ref=standards.rows.find(row=>String(row[6]||"").endsWith("3.1.2_Pengurusan Mata Pelajaran"));
  assert.ok(ref);
  const result=sandbox.standardFolderInfo_(ss,{standard:ref[0],noItem:ref[1],aspek:ref[2],zipPath:ref[6]});
  assert.equal(result.status,undefined);
  const archive=root.children.get("SKAS_MASTER_FOLDER_2026");
  const group=archive.children.get("03_STANDARD 3.1_KURIKULUM");
  assert.ok(group);
- const subject=group.children.get("3.1.2_Pengurusan Mata Pelajaran").children.get("Bahasa Melayu");
- assert.equal(subject.getId(),result.id);
+ const parent=group.children.get("3.1.2_Pengurusan Mata Pelajaran");
+ assert.equal(parent.getId(),result.id);
+ const child=sandbox.createZipPathFolder_(ss,ref[6]+"/Bahasa Melayu");
+ assert.equal(parent.children.get("Bahasa Melayu").getId(),child.id);
  assert.equal(sandbox.updateStandard(ss,{standard:ref[0],noItem:ref[1],aspek:"DIUBAH",huraian:ref[3],row:standards.rows.indexOf(ref)+1}).status,"error");
 });
 test("full ZIP Drive folder generation covers supporting and Standard folders, repeat is idempotent",()=>{
@@ -133,7 +135,7 @@ test("full ZIP Drive folder generation covers supporting and Standard folders, r
  assert.ok(archive.children.get("00_PENGURUSAN SK@S").children.get("03_Jawatankuasa SK@S"));
  assert.ok(archive.children.get("04_STANDARD 3.2_KOKURIKULUM").children.get("PAJSK"));
  assert.ok(archive.children.get("11_PEMANTAUAN & PENAMBAHBAIKAN").children.get("Pelan Intervensi"));
- assert.equal(standards.rows.slice(3).filter(r=>r[6] && r[4] && r[5]).length,39,
+ assert.equal(standards.rows.slice(3).filter(r=>r[6] && r[4] && r[5]).length,30,
    "All imported Standard ZIP rows must link to their actual Drive folders.");
  const count=folderMap.size;offset=0;
  do{const r=sandbox.syncZipMasterFolders(ss,{offset});offset=r.nextOffset;}while(offset<80);
