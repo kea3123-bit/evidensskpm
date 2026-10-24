@@ -84,7 +84,27 @@ test("ZIP Standard module is renamed and includes inline import plus folder tool
  assert.match(html,/import_zip_standards/);
  assert.match(html,/sync_zip_master_folders/);
  assert.match(html,/Bina Folder ZIP di Drive/);
- assert.match(html,/Import Item Standard ZIP/);
+ assert.match(html,/Import Aspek Standard ZIP/);
  assert.match(html,/function renderZipCatalog\(/);
  assert.match(html,/function standardOptions\(/);
+});
+
+test("original ZIP is reconstructed as a 94-folder nested tree in Standard",()=>{
+ const inventory=[
+   {name:"03_STANDARD 3.1_KURIKULUM",paths:[
+     "3.1.1_Ketetapan Pelaksanaan Kurikulum",
+     "3.1.2_Pengurusan Mata Pelajaran/Bahasa Melayu",
+     "3.1.2_Pengurusan Mata Pelajaran/Matematik",
+     "Evidens"
+   ]},
+   {name:"00_PENGURUSAN SK@S",paths:["01_Panduan & Instrumen SK@S"]}
+ ];
+ run("SYSTEM_BUNDLE={zipCatalog:"+JSON.stringify(inventory)+",standards:[]}");
+ const hierarchy=run("buildZipFolderTree(SYSTEM_BUNDLE.zipCatalog)");
+ assert.equal(hierarchy.name,"SKAS_MASTER_FOLDER_2026");
+ assert.equal(run("flattenZipFolderTree(buildZipFolderTree(SYSTEM_BUNDLE.zipCatalog)).length"),9);
+ assert.equal(run('buildZipFolderTree(SYSTEM_BUNDLE.zipCatalog).children.find(x=>x.name==="03_STANDARD 3.1_KURIKULUM").children.find(x=>x.name==="3.1.2_Pengurusan Mata Pelajaran").children.length'),2);
+ assert.match(html,/94 folder/);
+ assert.match(html,/80 laluan \.keep/);
+ assert.doesNotMatch(html,/Sebanyak 39 laluan Standard tersedia/);
 });
