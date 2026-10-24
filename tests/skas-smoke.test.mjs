@@ -75,3 +75,16 @@ test("frontend detects older SKAS backend version instead of calling it an expir
   assert.match(html,/auth_exchange belum tersedia/);
   assert.match(html,/Deploy > Manage deployments > Edit > New version > Deploy/);
 });
+
+test("ZIP Standard module is renamed and includes inline import plus folder tools",()=>{
+ assert.match(html,/> Standard<\/a>/);
+ assert.match(html,/<h2 class="page-title">Standard<\/h2>/);
+ assert.doesNotMatch(html,/Senarai Standard & Folder/);
+ assert.match(html,/id="zip-catalog"/);
+ assert.match(html,/import_zip_standards/);
+ assert.match(html,/sync_zip_master_folders/);
+ assert.match(html,/Bina Folder ZIP di Drive/);
+ assert.match(html,/Import Item Standard ZIP/);
+ assert.match(html,/function renderZipCatalog\(/);
+ assert.match(html,/function standardOptions\(/);
+});
