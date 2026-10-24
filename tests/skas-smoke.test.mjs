@@ -16,6 +16,12 @@ test("app JS parses and 12 original master folder categories exist", () => {
   assert.ok(run("FOLDER_CATALOG.reduce((n,item)=>n+item[1].length,0)") >= 75);
   assert.ok(run("folderPath(0,0)").startsWith("SKAS_MASTER_FOLDER_2026/"));
 });
+test("official aspects and missing ZIP headings are recognized", () => {
+  assert.equal(run("OFFICIAL_ASPECTS.reduce((n,g)=>n+g[2].length,0)"), 38);
+  const missing = run("OFFICIAL_ASPECTS.filter(g=>g[0]===1||g[0]===2).flatMap(g=>g[2].filter(a=>!FOLDER_CATALOG[g[0]][1].some(x=>x.split('_')[0]===a[0])).map(a=>a[0])).join(',')");
+  assert.equal(missing, "1.3,2.7");
+  assert.equal(run("OFFICIAL_ASPECTS[5][2].at(-1)[0]"), "4.6");
+});
 test("unsafe protocols and HTML are not passed into evidence links", () => {
   assert.equal(run("safeHref('javascript:alert(1)')"), "");
   assert.equal(run("safeHref('data:text/html,hello')"), "");
