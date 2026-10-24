@@ -108,3 +108,13 @@ test("original ZIP is reconstructed as a 94-folder nested tree in Standard",()=>
  assert.match(html,/80 laluan \.keep/);
  assert.doesNotMatch(html,/Sebanyak 39 laluan Standard tersedia/);
 });
+
+test("evidence upload can share viewer link with private override; legacy repair is admin-only",()=>{
+ assert.match(html,/id="upload-link-sharing" checked/);
+ assert.match(html,/shareAccess:document\.getElementById\("upload-link-sharing"\)\.checked\?"link":"private"/);
+ assert.match(html,/res\.accessStatus==="restricted"/);
+ assert.match(html,/function repairOldEvidenceAccess\(/);
+ assert.match(html,/action:"repair_evidence_access"/);
+ assert.match(html,/class="btn-login-full admin-only" onclick="repairOldEvidenceAccess\(\)"/);
+ assert.match(html,/Sesiapa yang mempunyai pautan/);
+});
