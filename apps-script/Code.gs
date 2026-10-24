@@ -469,11 +469,26 @@ function saveEviden(ss,p){
   if(!sheet)throw new Error("Helaian EVIDEN tiada.");
   if(isFile){
     if(String(p.fileBase64).length>22*1024*1024)throw new Error("Fail melebihi 15 MB.");
-    var folderId=String(getSettings_(ss)["FOLDER DRIVE EVIDEN"] || getSettings_(ss)["FOLDER DRIVE"] || "").trim();
-    if(!folderId || folderId==="ROOT")throw new Error("Sila konfigurasi ID folder Google Drive eviden dahulu.");
+    // Use the same Drive folder reference managed by SENARAI STANDARD.
+    // If this is an older standard row not yet synchronized, create its folder
+    // lazily and store the mapping without changing evidence records.
+    var referenceSheet=ss.getSheetByName("SENARAI STANDARD");
+    standardFolderHeaders_(referenceSheet);
+    var refRows=referenceSheet.getDataRange().getValues();
+    var refIndex=refRows.findIndex(function(row,i){
+      return i>0 && String(row[0])===String(p.standard) &&
+        String(row[1])===String(p.noItem) && String(row[2])===String(p.aspek);
+    });
+    if(refIndex<0)throw new Error("No Item tiada dalam SENARAI STANDARD.");
+    var refRow=refRows[refIndex];
+    var refFolder=refRow[4] && refRow[5] ? {id:refRow[4],url:refRow[5]} :
+      standardFolderInfo_(ss,p);
+    if(!refRow[4] || !refRow[5]){
+      referenceSheet.getRange(refIndex+1,5,1,2).setValues([[refFolder.id,refFolder.url]]);
+    }
     var bytes=Utilities.base64Decode(p.fileBase64);
     if(bytes.length>15*1024*1024)throw new Error("Fail melebihi 15 MB.");
-    var folder=DriveApp.getFolderById(folderId);
+    var folder=DriveApp.getFolderById(refFolder.id);
     var blob=Utilities.newBlob(bytes, String(p.fileMime||"application/octet-stream"), String(p.fileName).replace(/[\\/]/g,"_"));
     var file=folder.createFile(blob);
     // No ANYONE_WITH_LINK: leave Drive sharing private/inherited.
