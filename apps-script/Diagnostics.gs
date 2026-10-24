@@ -100,7 +100,11 @@ function diagnoseSKASConnection() {
         }
       }
     } catch(err) {
-      add("EKE_BRIDGE_PING", false, "Bridge connection failed. Check script external_request permission and deployment.");
+      var msg = String(err && err.message || err || "");
+      var isScopeError = /script\\.external_request|permission to call UrlFetchApp|Authorization is required/i.test(msg);
+      add("EKE_BRIDGE_PING", false, isScopeError ?
+        "SKAS_OAUTH_REQUIRED: UrlFetchApp permission missing. Run authorizeSKAS() in SKAS Apps Script editor using the deployment account, approve OAuth, then deploy a new version." :
+        "BRIDGE_CONNECTION_ERROR: outbound request failed. Check deployment URL / allowed origins; see Apps Script Executions for details.");
     }
   } else {
     add("EKE_BRIDGE_PING", false, "Not run: fix the property, origin, or sheet checks above first.");
